@@ -150,53 +150,48 @@
             </table>
         </div>
     </div>
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const mText = document.getElementById('multiplier');
+    const balanceDisplay = document.querySelector('.balance-display');
 
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const mText = document.getElementById('multiplier');
-        let currentX = 1.00, isFlying = false, bets = {1: false, 2: false};
+    async function syncGame() {
+        try {
+            const res = await fetch('/api/game-data');
+            const data = await res.json();
+            
+            let val = parseFloat(data.multiplier);
+            mText.innerText = val.toFixed(2) + "x";
+            balanceDisplay.innerText = data.balance.toFixed(2) + " BDT";
 
-        function changeAmt(id, val) {
-            let el = document.getElementById('amt-' + id);
-            let current = parseInt(el.innerText);
-            if(current + val >= 0) el.innerText = current + val;
-        }
-        function setAmt(id, val) { document.getElementById('amt-' + id).innerText = val; }
-
-        function toggleTab(id, mode) {
-            const card = document.getElementById('p' + id);
-            const tabs = card.querySelectorAll('.tab');
-            const autoSection = document.getElementById('auto-' + id);
-            tabs.forEach(t => t.classList.remove('active-tab'));
-            (mode === 'bet' ? tabs[0] : tabs[1]).classList.add('active-tab');
-            autoSection.style.display = (mode === 'auto') ? 'grid' : 'none';
-        }
-
-        function handleAction(id) {
-            const btn = document.getElementById('btn-' + id);
-            if(!isFlying) {
-                isFlying = true; currentX = 1.00; mText.style.color = "#fff";
-                btn.innerText = "CASH OUT"; btn.classList.add('cashout');
-                bets[id] = true; animate();
-            } else if(bets[id]) {
-                btn.innerText = "BET"; btn.classList.remove('cashout');
-                bets[id] = false;
-            }
-        }
-
-        function animate() {
-            if(!isFlying) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.beginPath(); ctx.strokeStyle = "#ff0044"; ctx.lineWidth = 5;
-            ctx.moveTo(0, 150); ctx.quadraticCurveTo(currentX*15, 150, currentX*30, 150-(currentX*10));
+            ctx.beginPath();
+            ctx.strokeStyle = data.is_crashed ? "#555" : "#ff0044";
+            ctx.lineWidth = 5;
+            ctx.moveTo(0, 150);
+            ctx.quadraticCurveTo(val * 20, 150, val * 40, 150 - (val * 12));
             ctx.stroke();
-            currentX += 0.01; mText.innerText = currentX.toFixed(2) + "x";
-            if(currentX > 3.20) { 
-                isFlying = false; mText.style.color = "red"; mText.innerText = "FLEW AWAY!"; 
-                document.querySelectorAll('.main-btn').forEach(b => { b.innerText="BET"; b.classList.remove('cashout'); });
-            } else { requestAnimationFrame(animate); }
-        }
-    </script>
+
+            if(data.is_crashed) {
+                mText.style.color = "red";
+                mText.innerText = "FLEW AWAY!";
+            } else {
+                mText.style.color = "#fff";
+            }
+        } catch (e) { console.log("Reconnecting..."); }
+    }
+
+    // প্রতি ৫০০ মিলিসেকেন্ডে ডাটাবেস চেক করবে
+    setInterval(syncGame, 500);
+
+    // বেট হ্যান্ডেল করার বেসিক লজিক
+    async function handleAction(id) {
+        const amt = document.getElementById('amt-' + id).innerText;
+        alert("Bet Placed: " + amt + " BDT");
+    }
+</script>
+
+    
 </body>
 </html>
