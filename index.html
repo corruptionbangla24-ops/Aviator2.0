@@ -251,6 +251,15 @@ async function handleAction(id) {
         }
     }
 }
+function toggleAuto(panel, type) {
+    const toggleBtn = event.currentTarget;
+    toggleBtn.classList.toggle('on');
+    
+    if (panel === 1) {
+        if (type === 'bet') isAutoBet1 = toggleBtn.classList.contains('on');
+        if (type === 'cashout') isAutoCashout1 = toggleBtn.classList.contains('on');
+    }
+}
 
     // প্রতি ৫০০ মিলিসেকেন্ডে ডাটাবেস থেকে তথ্য আনবে
     setInterval(updateGame, 500);
