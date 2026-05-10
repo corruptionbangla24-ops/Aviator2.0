@@ -20,4 +20,37 @@ app.get('/api/game-data', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+// টেবিল তৈরি করার অটোমেটিক রুট
+app.get('/setup-database', async (req, res) => {
+    try {
+        const conn = await mysql.createConnection(dbUri);
+        
+        // ১. গেম স্টেট টেবিল তৈরি
+        await conn.execute(`
+            CREATE TABLE IF NOT EXISTS aviator_game_state (
+                id INT PRIMARY KEY,
+                current_multiplier DECIMAL(10,2) DEFAULT 1.00,
+                is_crashed BOOLEAN DEFAULT FALSE
+            )
+        `);
+
+        // ২. ইউজার টেবিল তৈরি
+        await conn.execute(`
+            CREATE TABLE IF NOT EXISTS aviator_users (
+                id INT PRIMARY KEY,
+                balance DECIMAL(10,2) DEFAULT 500.00
+            )
+        `);
+
+        // ৩. প্রাথমিক ডাটা ইনসার্ট করা
+        await conn.execute('INSERT IGNORE INTO aviator_game_state (id, current_multiplier, is_crashed) VALUES (1, 1.00, false)');
+        await conn.execute('INSERT IGNORE INTO aviator_users (id, balance) VALUES (1, 500.00)');
+
+        await conn.end();
+        res.send("<h1>সফলভাবে এভিয়েটর টেবিলগুলো তৈরি হয়েছে!</h1>");
+    } catch (err) {
+        res.status(500).send("ভুল হয়েছে: " + err.message);
+    }
+});
+
 app.listen(PORT, () => console.log('Server running...'));
