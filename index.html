@@ -200,6 +200,48 @@
         ctx.quadraticCurveTo(val * 20, 150, val * 40, 150 - (val * 12));
         ctx.stroke();
     }
+let isBetting = false;
+let currentBetAmount = 0;
+
+async function handleAction(id) {
+    const btn = document.getElementById('btn-' + id);
+    const amtLabel = document.getElementById('amt-' + id);
+    const currentMult = parseFloat(mText.innerText);
+
+    if (!isBetting) {
+        // ১. বেট ধরার লজিক
+        currentBetAmount = parseInt(amtLabel.innerText);
+        const res = await fetch('/api/place-bet', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ amount: currentBetAmount })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            isBetting = true;
+            btn.innerText = "CASH OUT";
+            btn.classList.add('cashout');
+        } else {
+            alert(data.message); // ব্যালেন্স কম হলে দেখাবে
+        }
+    } else {
+        // ২. ক্যাশআউট করার লজিক
+        const res = await fetch('/api/cashout', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ amount: currentBetAmount, multiplier: currentMult })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            alert("বিজয়ী! আপনি পেয়েছেন: " + data.win + " BDT");
+            btn.innerText = "BET";
+            btn.classList.remove('cashout');
+            isBetting = false;
+        }
+    }
+}
 
     // প্রতি ৫০০ মিলিসেকেন্ডে ডাটাবেস থেকে তথ্য আনবে
     setInterval(updateGame, 500);
