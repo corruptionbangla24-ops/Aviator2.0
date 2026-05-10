@@ -180,6 +180,10 @@
             mText.style.color = "white";
             drawCurve(val, false);
         }
+            // --- অটো ক্যাশআউট লজিক (১৮২ লাইনের পর) ---
+            if (isBetting && isAutoCashout1 && val >= autoCashoutValue1) {
+                handleAction(1); // অটোমেটিক ক্যাশআউট হবে
+            }
 
         if (balanceDisplay) {
             balanceDisplay.innerText = parseFloat(data.balance).toFixed(2) + " BDT";
