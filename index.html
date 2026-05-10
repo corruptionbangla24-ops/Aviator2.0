@@ -151,46 +151,54 @@
         </div>
     </div>
 <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    // আপনার ডিজাইনের এলিমেন্টগুলো সিলেক্ট করা
     const mText = document.getElementById('multiplier');
     const balanceDisplay = document.querySelector('.balance-display');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
 
-    async function syncGame() {
+    async function updateGame() {
         try {
-            const res = await fetch('/api/game-data');
-            const data = await res.json();
-            
+            const response = await fetch('/api/game-data');
+            const data = await response.json();
+
+            // ১. মাল্টিপ্লায়ার এবং কালার আপডেট
             let val = parseFloat(data.multiplier);
-            mText.innerText = val.toFixed(2) + "x";
-            balanceDisplay.innerText = data.balance.toFixed(2) + " BDT";
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.beginPath();
-            ctx.strokeStyle = data.is_crashed ? "#555" : "#ff0044";
-            ctx.lineWidth = 5;
-            ctx.moveTo(0, 150);
-            ctx.quadraticCurveTo(val * 20, 150, val * 40, 150 - (val * 12));
-            ctx.stroke();
-
-            if(data.is_crashed) {
-                mText.style.color = "red";
+            if (data.is_crashed == 1) {
                 mText.innerText = "FLEW AWAY!";
+                mText.style.color = "red";
+                drawCurve(val, true); // ক্রাশড লাইন
             } else {
-                mText.style.color = "#fff";
+                mText.innerText = val.toFixed(2) + "x";
+                mText.style.color = "white";
+                drawCurve(val, false); // রানিং লাইন
             }
-        } catch (e) { console.log("Reconnecting..."); }
+
+            // ২. ব্যালেন্স আপডেট (সরাসরি আপনার ডিজাইনে)
+            if (balanceDisplay) {
+                balanceDisplay.innerText = parseFloat(data.balance).toFixed(2) + " BDT";
+            }
+
+        } catch (error) {
+            console.log("Reconnecting...");
+        }
     }
 
-    // প্রতি ৫০০ মিলিসেকেন্ডে ডাটাবেস চেক করবে
-    setInterval(syncGame, 500);
-
-    // বেট হ্যান্ডেল করার বেসিক লজিক
-    async function handleAction(id) {
-        const amt = document.getElementById('amt-' + id).innerText;
-        alert("Bet Placed: " + amt + " BDT");
+    // ৩. ক্যানভাসে লাল কার্ভ লাইনটি আঁকা
+    function drawCurve(val, crashed) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.strokeStyle = crashed ? "#555" : "#ff0044"; 
+        ctx.lineWidth = 5;
+        ctx.moveTo(0, 150);
+        ctx.quadraticCurveTo(val * 20, 150, val * 40, 150 - (val * 12));
+        ctx.stroke();
     }
+
+    // প্রতি ৫০০ মিলিসেকেন্ডে ডাটাবেস থেকে তথ্য আনবে
+    setInterval(updateGame, 500);
 </script>
+
 
     
 </body>
