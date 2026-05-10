@@ -6,18 +6,28 @@ app.use(express.static('./'));
 // আপনার Aiven MySQL কানেকশন ইনফো এখানে দিন
 const dbUri = 'mysql://avnadmin:AVNS_PsYa4FE9fJvITOf4u0Z@mysql-8138310-corruptionbangla24-843b.l.aivencloud.com:15225{"rejectUnauthorized":true}';
 
-
 app.get('/api/game-data', async (req, res) => {
     try {
         const conn = await mysql.createConnection(dbUri);
-        const [game] = await conn.execute('SELECT current_multiplier, is_crashed FROM game_state WHERE id = 1');
-        const [user] = await conn.execute('SELECT balance FROM users WHERE id = 1');
+        
+        // নতুন টেবিল নাম অনুযায়ী ডেটা আনা
+        const [gameRows] = await conn.execute('SELECT current_multiplier, is_crashed FROM aviator_game_state WHERE id = 1');
+        const [userRows] = await conn.execute('SELECT balance FROM aviator_users WHERE id = 1');
+        
         await conn.end();
-        res.json({ multiplier: game[0].current_multiplier, is_crashed: game[0].is_crashed, balance: user[0].balance });
+
+        // সঠিক ভেরিয়েবল দিয়ে ডেটা পাঠানো
+        res.json({ 
+            multiplier: gameRows[0].current_multiplier, 
+            is_crashed: gameRows[0].is_crashed, 
+            balance: userRows[0].balance 
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
+
 
 const PORT = process.env.PORT || 3000;
 // টেবিল তৈরি করার অটোমেটিক রুট
