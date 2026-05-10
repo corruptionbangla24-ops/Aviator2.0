@@ -81,4 +81,38 @@ app.get('/setup-database', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+// ১. বেট ধরার API
+app.post('/api/place-bet', async (req, res) => {
+    const { amount } = req.body;
+    try {
+        const conn = await mysql.createConnection(dbConfig);
+        // ইউজারের বর্তমান ব্যালেন্স চেক করা
+        const [user] = await conn.execute('SELECT balance FROM aviator_users WHERE id = 1');
+        
+        if (user[0].balance >= amount) {
+            // ব্যালেন্স থেকে টাকা কেটে নেওয়া
+            await conn.execute('UPDATE aviator_users SET balance = balance - ? WHERE id = 1', [amount]);
+            await conn.end();
+            res.json({ success: true, message: "Bet Placed!" });
+        } else {
+            await conn.end();
+            res.status(400).json({ success: false, message: "ইন্সফিসিয়েন্ট ব্যালেন্স!" });
+        }
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ২. ক্যাশআউট করার API
+app.post('/api/cashout', async (req, res) => {
+    const { amount, multiplier } = req.body;
+    try {
+        const conn = await mysql.createConnection(dbConfig);
+        const winAmount = amount * multiplier;
+        
+        // ব্যালেন্সে উইনিং টাকা যোগ করা
+        await conn.execute('UPDATE aviator_users SET balance = balance + ? WHERE id = 1', [winAmount]);
+        await conn.end();
+        res.json({ success: true, win: winAmount.toFixed(2) });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.listen(PORT, () => console.log('Server Running...'));
