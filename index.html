@@ -158,31 +158,37 @@
     const ctx = canvas.getContext('2d');
 
     async function updateGame() {
-        try {
-            const response = await fetch('/api/game-data');
-            const data = await response.json();
+    try {
+        const response = await fetch('/api/game-data');
+        const data = await response.json();
 
-            // ১. মাল্টিপ্লায়ার এবং কালার আপডেট
-            let val = parseFloat(data.multiplier);
-            if (data.is_crashed == 1) {
-                mText.innerText = "FLEW AWAY!";
-                mText.style.color = "red";
-                drawCurve(val, true); // ক্রাশড লাইন
-            } else {
-                mText.innerText = val.toFixed(2) + "x";
-                mText.style.color = "white";
-                drawCurve(val, false); // রানিং লাইন
-            }
-
-            // ২. ব্যালেন্স আপডেট (সরাসরি আপনার ডিজাইনে)
-            if (balanceDisplay) {
-                balanceDisplay.innerText = parseFloat(data.balance).toFixed(2) + " BDT";
-            }
-
-        } catch (error) {
-            console.log("Reconnecting...");
+        let val = parseFloat(data.multiplier);
+        
+        if (data.is_crashed == 1) {
+            mText.innerText = "FLEW AWAY!";
+            mText.style.color = "red";
+            drawCurve(val, true);
+            
+            // --- বাটন রিসেট লজিক ---
+            isBetting = false; 
+            document.querySelectorAll('.main-btn').forEach(btn => {
+                btn.innerText = "BET";
+                btn.classList.remove('cashout');
+            });
+        } else {
+            mText.innerText = val.toFixed(2) + "x";
+            mText.style.color = "white";
+            drawCurve(val, false);
         }
+
+        if (balanceDisplay) {
+            balanceDisplay.innerText = parseFloat(data.balance).toFixed(2) + " BDT";
+        }
+    } catch (error) {
+        console.log("Syncing...");
     }
+}
+
 
     // ৩. ক্যানভাসে লাল কার্ভ লাইনটি আঁকা
     function drawCurve(val, crashed) {
