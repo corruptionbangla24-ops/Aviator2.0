@@ -11,7 +11,7 @@ const dbConfig = {
     password: 'AVNS_PsYa4FE9fJvITOf4u0Z',
     database: 'defaultdb',
     port: 15225,
-    ssl: { rejectUnauthorized: true }
+    ssl: { rejectUnauthorized: false }
 };
 
 // ২. গেম ডাটা API
