@@ -160,9 +160,134 @@
         </div>
     </div>
         
-                
+   <script>
+    // ১. গ্লোবাল ভেরিয়েবল
+    let isBetting = false;
+    let currentBetAmount = 0;
+    let isAutoBet1 = false;
+    let isAutoCashout1 = false;
+    let autoCashoutValue1 = 2.00;
 
+    const mText = document.getElementById('multiplier');
+    const balanceDisplay = document.querySelector('.balance-display');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
 
-    
+    // ২. গেম ডাটা এবং অটো-লজিক আপডেট
+    async function updateGame() {
+        try {
+            const response = await fetch('/api/game-data');
+            const data = await response.json();
+            let val = parseFloat(data.multiplier);
+
+            if (data.is_crashed == 1) {
+                mText.innerText = "FLEW AWAY!";
+                mText.style.color = "red";
+                drawCurve(val, true);
+
+                // যখন ক্রাশ হবে তখন বাটন রিসেট
+                if (isBetting) {
+                    isBetting = false;
+                    document.querySelectorAll('.main-btn').forEach(btn => {
+                        btn.innerText = "BET";
+                        btn.classList.remove('cashout');
+                    });
+                }
+
+                // ৫ সেকেন্ড পর অটো বেট চেক
+                if (isAutoBet1 && !isBetting) {
+                    setTimeout(() => { if(isAutoBet1) handleAction(1); }, 5000);
+                }
+            } else {
+                mText.innerText = val.toFixed(2) + "x";
+                mText.style.color = "white";
+                drawCurve(val, false);
+
+                // --- অটো ক্যাশআউট চেক ---
+                if (isBetting && isAutoCashout1 && val >= autoCashoutValue1) {
+                    handleAction(1);
+                }
+            }
+
+            if (balanceDisplay && data.balance) {
+                balanceDisplay.innerText = parseFloat(data.balance).toFixed(2) + " BDT";
+            }
+        } catch (error) { console.log("Reconnecting..."); }
+    }
+
+    // ৩. ক্যানভাস এনিমেশন
+    function drawCurve(val, crashed) {
+        if (!canvas) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.strokeStyle = crashed ? "#555" : "#ff0044";
+        ctx.lineWidth = 5;
+        ctx.moveTo(0, 150);
+        ctx.quadraticCurveTo(val * 20, 150, val * 40, 150 - (val * 12));
+        ctx.stroke();
+    }
+
+    // ৪. বেটিং ও ক্যাশআউট বাটন ফাংশন
+    async function handleAction(id) {
+        const btn = document.getElementById('btn-' + id);
+        const amtLabel = document.getElementById('amt-' + id);
+        const currentMult = parseFloat(mText.innerText);
+
+        if (!isBetting) {
+            currentBetAmount = parseInt(amtLabel.innerText);
+            try {
+                const res = await fetch('/api/place-bet', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ amount: currentBetAmount })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    isBetting = true;
+                    btn.innerText = "CASH OUT";
+                    btn.classList.add('cashout');
+                } else { alert(data.message); }
+            } catch(e) { console.log("Bet Error"); }
+        } else {
+            try {
+                const res = await fetch('/api/cashout', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ amount: currentBetAmount, multiplier: currentMult })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    btn.innerText = "BET";
+                    btn.classList.remove('cashout');
+                    isBetting = false;
+                    alert("বিজয়ী! আপনি পেয়েছেন: " + data.win + " BDT");
+                }
+            } catch(e) { console.log("Cashout Error"); }
+        }
+    }
+
+    // ৫. অটো কন্ট্রোল ফাংশন
+    function toggleAuto(panel, type) {
+        const toggleBtn = event.currentTarget;
+        toggleBtn.classList.toggle('on');
+        const isOn = toggleBtn.classList.contains('on');
+        if (panel === 1) {
+            if (type === 'bet') isAutoBet1 = isOn;
+            if (type === 'cashout') isAutoCashout1 = isOn;
+        }
+    }
+
+    function setAutoValue(panel) {
+        let newValue = prompt("Enter Auto Cashout (e.g. 1.50):", autoCashoutValue1);
+        if (newValue && !isNaN(newValue) && newValue >= 1.01) {
+            autoCashoutValue1 = parseFloat(newValue);
+            let display = document.getElementById('auto-val-' + panel);
+            if (display) display.innerText = autoCashoutValue1.toFixed(2) + "x";
+        }
+    }
+
+    // প্রতি ৫০০ মিলিসেকেন্ডে আপডেট
+    setInterval(updateGame, 500);
+</script>   
 </body>
 </html>
