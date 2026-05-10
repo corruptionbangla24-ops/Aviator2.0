@@ -4,7 +4,7 @@ const app = express();
 app.use(express.static('./'));
 
 // আপনার Aiven MySQL কানেকশন ইনফো এখানে দিন
-const dbUri = 'mysql://avnadmin:AVNS_PsYa4FE9fJvITOf4u0Z@://aivencloud.com{"rejectUnauthorized":true}';
+const dbUri = 'mysql://avnadmin:AVNS_PsYa4FE9fJvITOf4u0Z@mysql-8138310-corruptionbangla24-843b.l.aivencloud.com:15225{"rejectUnauthorized":true}';
 
 
 app.get('/api/game-data', async (req, res) => {
