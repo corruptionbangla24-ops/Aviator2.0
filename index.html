@@ -270,16 +270,17 @@ function toggleAuto(panel, type) {
     }
 }
 function setAutoValue(panel) {
-    let newValue = prompt("অটো ক্যাশআউট ভ্যালু লিখুন (উদাঃ 1.50):", "2.00");
+    // ইউজার থেকে নতুন মান নেওয়া
+    let newValue = prompt("নতুন অটো ক্যাশআউট মান লিখুন (যেমন: ১.৫০):", "2.00");
     
+    // চেক করা হচ্ছে ইনপুট সঠিক কি না
     if (newValue !== null && !isNaN(newValue) && newValue >= 1.01) {
         if (panel === 1) {
-            autoCashoutValue1 = parseFloat(newValue);
-            document.getElementById('auto-val-1').innerText = autoCashoutValue1.toFixed(2) + "x";
+            autoCashoutValue1 = parseFloat(newValue); // লজিক আপডেট
+            document.getElementById('auto-val-1').innerText = autoCashoutValue1.toFixed(2) + "x"; // স্ক্রিনের লেখা আপডেট
         }
-        // প্যানেল ২ থাকলে তার জন্য আলাদা লজিক দিতে পারেন
     } else {
-        alert("দয়া করে সঠিক নাম্বার লিখুন (ন্যূনতম ১.০১)");
+        alert("দয়া করে ১.০১ এর বেশি একটি সঠিক সংখ্যা লিখুন।");
     }
 }
 
