@@ -206,31 +206,34 @@
         console.log("Syncing...");
     }
 }
+// অটো ক্যাশআউট ভ্যালু পরিবর্তন করার ফাংশন
 function setAutoValue(panel) {
-    // ইউজার থেকে ইনপুট নেওয়া
-    let newValue = prompt("নতুন অটো ক্যাশআউট মান লিখুন (যেমন: 1.50):", autoCashoutValue1);
-    
-    // ইনপুট চেক করা
+    // বর্তমান ভ্যালুসহ প্রম্পট বক্স ওপেন করা
+    let currentValue = (panel === 1) ? autoCashoutValue1 : autoCashoutValue1; // ২য় প্যানেল থাকলে আলাদা করতে পারেন
+    let newValue = prompt("অটো ক্যাশআউট ভ্যালু সেট করুন (যেমন: 1.50):", currentValue);
+
+    // চেক করা হচ্ছে ইনপুট কি সঠিক?
     if (newValue !== null && newValue !== "") {
         let parsedValue = parseFloat(newValue);
-        
+
         if (!isNaN(parsedValue) && parsedValue >= 1.01) {
-            // ১. ভেরিয়েবল আপডেট করা
-            autoCashoutValue1 = parsedValue;
-            
-            // ২. স্ক্রিনে লেখা আপডেট করা (ID ব্যবহার করে)
-            let displayElement = document.getElementById('auto-val-1');
-            if (displayElement) {
-                displayElement.innerText = autoCashoutValue1.toFixed(2) + "x";
-                console.log("Auto Cashout set to: " + autoCashoutValue1);
-            } else {
-                alert("Error: Display element not found!");
+            // ১. ভেরিয়েবল আপডেট (লজিকের জন্য)
+            if (panel === 1) {
+                autoCashoutValue1 = parsedValue;
+                
+                // ২. স্ক্রিনের ডিসপ্লে আপডেট (ID দিয়ে)
+                let displayBox = document.getElementById('auto-val-' + panel);
+                if (displayBox) {
+                    displayBox.innerText = autoCashoutValue1.toFixed(2) + "x";
+                }
             }
+            console.log("Panel " + panel + " Auto Cashout set to: " + parsedValue);
         } else {
-            alert("দয়া করে ১.০১ বা তার বেশি একটি সঠিক সংখ্যা লিখুন।");
+            alert("দয়া করে ১.০১ এর উপরে একটি সঠিক সংখ্যা লিখুন (যেমন: ১.৫০, ২.০০)।");
         }
     }
 }
+
 
 
     // ৩. ক্যানভাসে লাল কার্ভ লাইনটি আঁকা
