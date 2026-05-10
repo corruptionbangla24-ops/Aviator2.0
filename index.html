@@ -269,6 +269,19 @@ function toggleAuto(panel, type) {
         if (type === 'cashout') isAutoCashout1 = toggleBtn.classList.contains('on');
     }
 }
+function setAutoValue(panel) {
+    let newValue = prompt("অটো ক্যাশআউট ভ্যালু লিখুন (উদাঃ 1.50):", "2.00");
+    
+    if (newValue !== null && !isNaN(newValue) && newValue >= 1.01) {
+        if (panel === 1) {
+            autoCashoutValue1 = parseFloat(newValue);
+            document.getElementById('auto-val-1').innerText = autoCashoutValue1.toFixed(2) + "x";
+        }
+        // প্যানেল ২ থাকলে তার জন্য আলাদা লজিক দিতে পারেন
+    } else {
+        alert("দয়া করে সঠিক নাম্বার লিখুন (ন্যূনতম ১.০১)");
+    }
+}
 
     // প্রতি ৫০০ মিলিসেকেন্ডে ডাটাবেস থেকে তথ্য আনবে
     setInterval(updateGame, 500);
