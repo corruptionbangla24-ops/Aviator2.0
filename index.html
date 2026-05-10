@@ -175,6 +175,11 @@
                 btn.innerText = "BET";
                 btn.classList.remove('cashout');
             });
+                        // ৫ সেকেন্ড পর নতুন রাউন্ড শুরু হলে অটো বেট চেক (১৭৭ লাইনের পর)
+            if (isAutoBet1 && !isBetting) {
+                setTimeout(() => handleAction(1), 5000); 
+            }
+
         } else {
             mText.innerText = val.toFixed(2) + "x";
             mText.style.color = "white";
