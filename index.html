@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aviator Professional with Menu</title>
+    <style>
+        :root { --bg: #000; --panel: #1b1b1b; --green: #28a745; --yellow: #ffc107; --border: #333; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; }
+        
+        /* প্রফেশনাল মেনুবার */
+        .navbar { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 10px 15px; border-bottom: 1px solid #282828; position: sticky; top: 0; z-index: 100; }
+        .logo-box { line-height: 1; }
+        .logo-box b { color: #e11d48; font-size: 16px; }
+        .logo-box span { font-size: 11px; display: block; color: #fff; }
+        .nav-right { display: flex; align-items: center; gap: 15px; }
+        .balance-display { background: #000; padding: 4px 12px; border-radius: 20px; border: 1px solid #333; color: var(--green); font-weight: bold; font-size: 14px; }
+        .menu-icon { font-size: 20px; cursor: pointer; color: #aaa; }
+
+        /* কন্টেন্ট এরিয়া */
+        .container { padding: 10px; }
+        .history { display: flex; gap: 8px; padding-bottom: 10px; overflow-x: auto; }
+        .history span { background: #222; padding: 2px 8px; border-radius: 10px; color: #bc82ff; font-size: 11px; border: 1px solid var(--border); }
+        
+        #game-box { background: #141414; height: 180px; border-radius: 15px; position: relative; border: 1px solid #282828; margin-bottom: 10px; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        #multiplier { font-size: 45px; font-weight: 900; z-index: 5; }
+        canvas { position: absolute; width: 100%; height: 100%; }
+
+        .bet-card { background: var(--panel); border-radius: 15px; padding: 12px; border: 1px solid var(--border); margin-bottom: 10px; }
+        .tabs { display: flex; background: #000; border-radius: 20px; padding: 2px; margin-bottom: 10px; }
+        .tab { flex: 1; text-align: center; font-size: 12px; padding: 5px; border-radius: 20px; cursor: pointer; color: #888; }
+        .active-tab { background: #333; color: #fff; }
+
+        .panel-layout { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 10px; align-items: center; }
+        .amount-section { display: flex; flex-direction: column; gap: 5px; }
+        .input-box { background: #000; border-radius: 8px; border: 1px solid #444; display: flex; justify-content: space-between; align-items: center; padding: 5px 15px; }
+        .input-box button { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        .grid-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .q-btn { background: #222; border: 1px solid var(--border); color: #fff; font-size: 11px; padding: 5px; border-radius: 5px; }
+
+        .main-btn { width: 100%; height: 100%; background: var(--green); border: none; color: #fff; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .cashout { background: var(--yellow); color: #000; }
+
+        .auto-settings { display: none; grid-column: span 2; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; }
+        .auto-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #aaa; margin-bottom: 5px; }
+        .toggle { width: 30px; height: 14px; background: #444; border-radius: 10px; position: relative; }
+        .toggle.on { background: var(--green); }
+        .toggle::after { content: ''; position: absolute; width: 12px; height: 12px; background: #fff; border-radius: 50%; top: 1px; left: 1px; transition: 0.2s; }
+        .toggle.on::after { left: 17px; }
+        .val-box { background: #000; border: 1px solid #444; padding: 2px 8px; border-radius: 5px; color: #fff; }
+
+        .live-bets { margin-top: 20px; background: #111; border-radius: 10px; padding: 10px; border: 1px solid #222; }
+        .bet-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+        .bet-table th { color: #777; padding-bottom: 8px; border-bottom: 1px solid #222; }
+        .bet-table td { padding: 8px 0; border-bottom: 1px solid #1a1a1a; color: #bbb; }
+        .win-txt { color: var(--green); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- মেনুবার -->
+    <nav class="navbar">
+        <div class="logo-box">
+            <b>BETLOVER24</b>
+            <span>Aviator</span>
+        </div>
+        <div class="nav-right">
+            <div class="balance-display">170.00 BDT</div>
+            <div class="menu-icon">☰</div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="history">
+            <span>1.20x</span> <span style="color:#ff0044">5.40x</span> <span>2.11x</span> <span>1.05x</span>
+        </div>
+
+        <div id="game-box">
+            <canvas id="canvas"></canvas>
+            <div id="multiplier">1.00x</div>
+        </div>
+
+        <!-- প্যানেল ১ -->
+        <div class="bet-card" id="p1">
+            <div class="tabs">
+                <div class="tab active-tab" onclick="toggleTab(1, 'bet')">Bet</div>
+                <div class="tab" onclick="toggleTab(1, 'auto')">Auto</div>
+            </div>
+            <div class="panel-layout">
+                <div class="amount-section">
+                    <div class="input-box">
+                        <button onclick="changeAmt(1, -10)">-</button>
+                        <b id="amt-1">90</b>
+                        <button onclick="changeAmt(1, 10)">+</button>
+                    </div>
+                    <div class="grid-btns">
+                        <button class="q-btn" onclick="setAmt(1, 100)">100</button>
+                        <button class="q-btn" onclick="setAmt(1, 200)">200</button>
+                    </div>
+                </div>
+                <button class="main-btn" id="btn-1" onclick="handleAction(1)">BET</button>
+                <div id="auto-1" class="auto-settings">
+                    <div class="auto-row">Auto Bet <div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+                    <div class="auto-row">Auto Cashout <div style="display:flex; align-items:center; gap:5px;">
+                        <div class="toggle on"></div> <div class="val-box">2.00x</div>
+                    </div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- প্যানেল ২ -->
+        <div class="bet-card" id="p2">
+            <div class="tabs">
+                <div class="tab active-tab" onclick="toggleTab(2, 'bet')">Bet</div>
+                <div class="tab" onclick="toggleTab(2, 'auto')">Auto</div>
+            </div>
+            <div class="panel-layout">
+                <div class="amount-section">
+                    <div class="input-box">
+                        <button onclick="changeAmt(2, -10)">-</button>
+                        <b id="amt-2">1010</b>
+                        <button onclick="changeAmt(2, 10)">+</button>
+                    </div>
+                    <div class="grid-btns">
+                        <button class="q-btn" onclick="setAmt(2, 500)">500</button>
+                        <button class="q-btn" onclick="setAmt(2, 1000)">1000</button>
+                    </div>
+                </div>
+                <button class="main-btn" id="btn-2" onclick="handleAction(2)">BET</button>
+                <div id="auto-2" class="auto-settings">
+                    <div class="auto-row">Auto Bet <div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+                    <div class="auto-row">Auto Cashout <div style="display:flex; align-items:center; gap:5px;">
+                        <div class="toggle on"></div> <div class="val-box">1.50x</div>
+                    </div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- প্লেয়ার লিস্ট টেবিল -->
+        <div class="live-bets">
+            <table class="bet-table">
+                <thead>
+                    <tr><th>PLAYER</th><th>BET BDT</th><th>WIN BDT</th></tr>
+                </thead>
+                <tbody id="bet-history">
+                    <tr><td>User_421</td><td>100.00</td><td>-</td></tr>
+                    <tr><td>Aviator_Pro</td><td>500.00</td><td class="win-txt">1250.00</td></tr>
+                    <tr><td>Player_99</td><td>1000.00</td><td class="win-txt">1500.00</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const mText = document.getElementById('multiplier');
+        let currentX = 1.00, isFlying = false, bets = {1: false, 2: false};
+
+        function changeAmt(id, val) {
+            let el = document.getElementById('amt-' + id);
+            let current = parseInt(el.innerText);
+            if(current + val >= 0) el.innerText = current + val;
+        }
+        function setAmt(id, val) { document.getElementById('amt-' + id).innerText = val; }
+
+        function toggleTab(id, mode) {
+            const card = document.getElementById('p' + id);
+            const tabs = card.querySelectorAll('.tab');
+            const autoSection = document.getElementById('auto-' + id);
+            tabs.forEach(t => t.classList.remove('active-tab'));
+            (mode === 'bet' ? tabs[0] : tabs[1]).classList.add('active-tab');
+            autoSection.style.display = (mode === 'auto') ? 'grid' : 'none';
+        }
+
+        function handleAction(id) {
+            const btn = document.getElementById('btn-' + id);
+            if(!isFlying) {
+                isFlying = true; currentX = 1.00; mText.style.color = "#fff";
+                btn.innerText = "CASH OUT"; btn.classList.add('cashout');
+                bets[id] = true; animate();
+            } else if(bets[id]) {
+                btn.innerText = "BET"; btn.classList.remove('cashout');
+                bets[id] = false;
+            }
+        }
+
+        function animate() {
+            if(!isFlying) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath(); ctx.strokeStyle = "#ff0044"; ctx.lineWidth = 5;
+            ctx.moveTo(0, 150); ctx.quadraticCurveTo(currentX*15, 150, currentX*30, 150-(currentX*10));
+            ctx.stroke();
+            currentX += 0.01; mText.innerText = currentX.toFixed(2) + "x";
+            if(currentX > 3.20) { 
+                isFlying = false; mText.style.color = "red"; mText.innerText = "FLEW AWAY!"; 
+                document.querySelectorAll('.main-btn').forEach(b => { b.innerText="BET"; b.classList.remove('cashout'); });
+            } else { requestAnimationFrame(animate); }
+        }
+    </script>
+</body>
+</html>
