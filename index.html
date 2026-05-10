@@ -216,7 +216,9 @@
     }
 let isBetting = false;
 let currentBetAmount = 0;
-
+let isAutoBet1 = false;
+    let isAutoCashout1 = false;
+    let autoCashoutValue1 = 2.00;
 async function handleAction(id) {
     const btn = document.getElementById('btn-' + id);
     const amtLabel = document.getElementById('amt-' + id);
