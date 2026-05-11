@@ -108,19 +108,33 @@ app.post('/api/place-bet', async (req, res) => {
         }
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
-
-// ২. ক্যাশআউট করার API
 app.post('/api/cashout', async (req, res) => {
-    const { amount, multiplier } = req.body;
+    const { betAmount, multiplier } = req.body;
+    
     try {
         const conn = await mysql.createConnection(dbConfig);
-        const winAmount = amount * multiplier;
         
-        // ব্যালেন্সে উইনিং টাকা যোগ করা
-        await conn.execute('UPDATE aviator_users SET balance = balance + ? WHERE id = 1', [winAmount]);
-        await conn.end();
-        res.json({ success: true, win: winAmount.toFixed(2) });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        // ১. সার্ভার সাইড ভেরিফিকেশন
+        const [game] = await conn.execute('SELECT current_multiplier, is_crashed FROM aviator_game_state WHERE id = 1');
+        
+        // game[0] ব্যবহার করা হয়েছে কারণ execute রেজাল্ট অ্যারে দেয়
+        if (!game[0].is_crashed && multiplier <= game[0].current_multiplier) {
+            const winAmount = betAmount * multiplier;
+            
+            // ২. ব্যালেন্স আপডেট (ইউজার আইডি ১ ধরে)
+            await conn.execute('UPDATE aviator_users SET balance = balance + ? WHERE id = 1', [winAmount]);
+            
+            await conn.end();
+            res.json({ success: true, win: winAmount.toFixed(2) });
+        } else {
+            await conn.end();
+            res.status(400).json({ success: false, message: "Too late! Bursting" });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
+// ৩. একদম শেষে থাকবে লিসেন পোর্ট
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Server Running...'));
