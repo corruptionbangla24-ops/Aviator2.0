@@ -179,6 +179,11 @@
                 mText.innerText = "FLEW AWAY!";
                 mText.style.color = "red";
                 drawCurve(val, true);
+                // --- ক্রাশ সাউন্ড লজিক ---
+                const flySound = document.getElementById('s-fly');
+                const crashSound = document.getElementById('s-crash');
+                if (flySound) { flySound.pause(); flySound.currentTime = 0; }
+                if (crashSound) crashSound.play();
 
                 // যখন ক্রাশ হবে তখন বাটন রিসেট
                 if (isBetting) {
@@ -197,6 +202,11 @@
                 mText.innerText = val.toFixed(2) + "x";
                 mText.style.color = "white";
                 drawCurve(val, false);
+                // --- ওড়ার সাউন্ড লজিক (ইঞ্জিন লুপ) ---
+                const flySound = document.getElementById('s-fly');
+                if (flySound && flySound.paused && val > 1.00) {
+                    flySound.play().catch(e => console.log("Sound enabled after click"));
+                }
 
                 // --- অটো ক্যাশআউট চেক ---
                 if (isBetting && isAutoCashout1 && val >= autoCashoutValue1) {
