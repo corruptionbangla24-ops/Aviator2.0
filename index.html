@@ -345,19 +345,43 @@ function changeAmt(id, val) {
                 }
             }
         }
-    function smoothAnimate() {
+    // ১. এনিমেশন ইঞ্জিন
+function smoothAnimate() {
     if (!isCrashed) {
-        // সার্ভারের জন্য অপেক্ষা না করে নিজে থেকেই বাড়তে থাকবে
+        // সার্ভারের জন্য অপেক্ষা না করে নিজে থেকেই ০.০১ হারে বাড়তে থাকবে
+        // এটি গেমকে থেমে থেমে চলা থেকে বাঁচাবে
         displayMultiplier += 0.01; 
+
+        // যদি ডিসপ্লে ভ্যালু সার্ভারের ভ্যালু থেকে অনেক পিছিয়ে থাকে, তবে দ্রুত সিঙ্ক করবে
+        if (displayMultiplier < targetMultiplier) {
+            displayMultiplier = targetMultiplier;
+        }
+
+        // স্ক্রিনে মাল্টিপ্লায়ার টেক্সট আপডেট
+        if (mText) {
+            mText.innerText = displayMultiplier.toFixed(2) + "x";
+            mText.style.color = "white";
+        }
         
-        mText.innerText = displayMultiplier.toFixed(2) + "x";
+        // লাল কার্ভ এবং হেলিকপ্টার ড্র করা
         drawCurve(displayMultiplier, false);
+        
     } else {
-        mText.innerText = "FLEW AWAY!";
+        // ক্রাশ হলে সরাসরি সার্ভারের ক্রাশ ভ্যালু দেখানো
+        displayMultiplier = targetMultiplier;
+        if (mText) {
+            mText.innerText = "FLEW AWAY!";
+            mText.style.color = "red";
+        }
         drawCurve(displayMultiplier, true);
     }
+
+    // প্রতি সেকেন্ডে ৬০ বার ছবি আঁকবে (Smooth 60FPS)
     requestAnimationFrame(smoothAnimate);
 }
+
+// ২. ইঞ্জিনটি প্রথমবার চালু করা
+smoothAnimate();
 
 
         // ৩. প্রতি ৫০০ মিলিসেকেন্ডে গেম আপডেট
