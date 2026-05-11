@@ -230,34 +230,41 @@ blastImg.src = 'explosion.png';
 
 function drawCurve(val, crashed) {
     if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // ১. ডাইনামিক স্কেলিং ও বেস পজিশন
-    let maxX = canvas.width - 70;  
-    let maxY = canvas.height - 70; 
-    let endX = Math.min(val * (canvas.width / 12), maxX);
-    let endY = Math.max(canvas.height - 35 - (val * (canvas.height / 18)), 45);
+    // ১. ডাইনামিক পজিশন (বক্সের ভেতরে সীমাবদ্ধ রাখা)
+    let maxX = canvas.width - 80;  
+    let maxY = 40; // উপরে ৪০ পিক্সেল জায়গা খালি রাখবে
+    
+    // যাত্রা শুরু হবে কর্ণার থেকে, তাই val বাড়ার সাথে সাথে endX এবং endY বাড়বে
+    let endX = Math.min((val - 1) * (canvas.width / 8), maxX);
+    let endY = Math.max((canvas.height - 10) - ((val - 1) * (canvas.height / 12)), maxY);
 
-    // ঢেউয়ের মান (Wave Offset)
-    hoverStep += 0.08;
-    let waveOffset = Math.sin(hoverStep) * 10; // এটিই ঢেউ তৈরি করবে
+    // ঢেউয়ের মান (Hover Step আগে গ্লোবাল ভেরিয়েবল হিসেবে থাকতে হবে)
+    hoverStep += 0.07;
+    let waveOffset = crashed ? 0 : Math.sin(hoverStep) * 10; 
 
-    // ২. লাল কার্ভ লাইন আঁকা (পুরো লাইন ঢেউ খেলবে)
+    // ২. লাল কার্ভ লাইন আঁকা (কর্ণার থেকে শুরু)
     ctx.beginPath();
     ctx.strokeStyle = crashed ? "#555" : "#ff0044";
     ctx.lineWidth = 5;
     ctx.lineCap = "round";
-    ctx.moveTo(0, canvas.height - 35);
     
-    // কন্ট্রোল পয়েন্ট এবং এন্ড পয়েন্টে ঢেউ যোগ করা
+    // একদম নিচের কর্ণার থেকে শুরু (x=0, y=height)
+    let startX = 0;
+    let startY = canvas.height - 5;
+    ctx.moveTo(startX, startY);
+    
+    // পুরো লাইন এবং মাথা একসাথে ঢেউ খেলবে
+    let currentEndY = endY + waveOffset;
     let ctrlX = endX / 2;
-    let ctrlY = (canvas.height - 35 + (crashed ? 0 : waveOffset)); 
-    let currentEndY = endY + (crashed ? 0 : waveOffset);
+    let ctrlY = startY + waveOffset; // কন্ট্রোল পয়েন্টেও ঢেউ যোগ করা হয়েছে
 
     ctx.quadraticCurveTo(ctrlX, ctrlY, endX, currentEndY);
     ctx.stroke();
 
-    // ৩. হেলিকপ্টার এনিমেশন (লাইনের মাথার সাথে ঢেউ খেলবে)
+    // ৩. হেলিকপ্টার ছবি (লাইনের একদম মাথায়)
     if (!crashed && planeImg.complete) {
         const size = 80;
         let planeX = endX - (size / 2);
@@ -270,9 +277,10 @@ function drawCurve(val, crashed) {
         ctx.drawImage(planeImg, planeX, planeY, size, size);
     } else if (crashed && blastImg.complete) {
         const bSize = 90;
-        ctx.drawImage(blastImg, endX - bSize/2, endY - bSize/2, bSize, bSize);
+        ctx.drawImage(blastImg, endX - (bSize / 2), currentEndY - (bSize / 2), bSize, bSize);
     }
 }
+
 
   
   
