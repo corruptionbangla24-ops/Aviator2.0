@@ -276,6 +276,24 @@
             if (type === 'cashout') isAutoCashout1 = isOn;
         }
     }
+function changeAmt(id, val) {
+    // id অনুযায়ী সঠিক প্যানেলের অ্যামাউন্ট এলিমেন্ট ধরা
+    let el = document.getElementById('amt-' + id);
+    let current = parseInt(el.innerText);
+    
+    // মিনিমাম ৫ টাকা শর্ত এবং আপডেট লজিক
+    if (current + val >= 5) {
+        el.innerText = current + val;
+    } else {
+        el.innerText = 5; // ৫ টাকার নিচে যেতে দিবে না
+        alert("মিনিমাম বেট ৫ টাকা");
+    }
+}
+
+// কুইক বাটন (১০০, ২০০, ৫০০) সেট করার ফাংশন
+function setAmt(id, val) {
+    document.getElementById('amt-' + id).innerText = val;
+}
 
     function setAutoValue(panel) {
         let newValue = prompt("Enter Auto Cashout (e.g. 1.50):", autoCashoutValue1);
