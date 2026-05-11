@@ -296,16 +296,12 @@ function drawCurve(val, crashed) {
     }
 }
 
-
-
-  
-  
-    // ৪. বেটিং ও ক্যাশআউট বাটন ফাংশন
     async function handleAction(id) {
         const btn = document.getElementById('btn-' + id);
         const amtLabel = document.getElementById('amt-' + id);
         const currentMult = parseFloat(mText.innerText);
 
+        // ১. বেট ধরার অংশ (যদি আগে থেকে বেট না থাকে)
         if (!isBetting) {
             currentBetAmount = parseInt(amtLabel.innerText);
             try {
@@ -315,30 +311,52 @@ function drawCurve(val, crashed) {
                     body: JSON.stringify({ amount: currentBetAmount })
                 });
                 const data = await res.json();
+                
                 if (data.success) {
                     isBetting = true;
                     btn.innerText = "CASH OUT";
                     btn.classList.add('cashout');
-                } else { alert(data.message); }
+                    // ক্লিক সাউন্ড
+                    if(document.getElementById('s-click')) document.getElementById('s-click').play();
+                } else {
+                    alert(data.message);
+                }
             } catch(e) { console.log("Bet Error"); }
+
         } else {
+            // ২. ক্যাশআউট করার অংশ (যদি অলরেডি বেট ধরা থাকে)
             try {
                 const res = await fetch('/api/cashout', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ amount: currentBetAmount, multiplier: currentMult })
+                    body: JSON.stringify({ 
+                        betAmount: currentBetAmount, 
+                        multiplier: currentMult 
+                    })
                 });
+                
                 const data = await res.json();
                 if (data.success) {
+                    alert("অভিনন্দন! আপনি জিতেছেন: " + data.win + " BDT");
+                    
+                    // বাটন রিসেট
+                    isBetting = false;
                     btn.innerText = "BET";
                     btn.classList.remove('cashout');
-                    isBetting = false;
-                    alert("বিজয়ী! আপনি পেয়েছেন: " + data.win + " BDT");
+                    
+                    // ক্লিক সাউন্ড
+                    if(document.getElementById('s-click')) document.getElementById('s-click').play();
+                } else {
+                    alert(data.message);
                 }
             } catch(e) { console.log("Cashout Error"); }
         }
     }
 
+
+  
+  
+    
 function toggleTab(p, type) {
     const card = document.getElementById(`p${p}`);
     const tabs = card.querySelectorAll('.tab');
