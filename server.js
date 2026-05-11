@@ -14,11 +14,19 @@ const dbConfig = {
     ssl: { rejectUnauthorized: false }
 };
 
-// ১. প্রফেশনাল ক্রাশ পয়েন্ট জেনারেটর
 function generateCrashPoint() {
-    const e = Math.random();
-    const outcome = Math.floor(100 / (1 - e)) / 100;
-    return Math.max(1.10, outcome); // সর্বনিম্ন ১.১০ এ ক্রাশ করবে
+    const r = Math.random();
+    
+    // ১০% হাউস এজ (RTP 90%)
+    // এর মানে হলো ১০০ বারের মধ্যে ১০ বার গেমটি ১.০০x এই ক্রাশ করবে
+    if (r < 0.10) return 1.00; 
+
+    // এভিয়েটর ম্যাথমেটিক্যাল ফর্মুলা (RTP 90% এর জন্য অ্যাডজাস্ট করা)
+    // সূত্র: (100 - HouseEdge) / (100 - r*100)
+    const outcome = 90 / (100 - (r * 100));
+    
+    // সর্বনিম্ন ১.০১ এবং সর্বোচ্চ যে কোনো নাম্বার আসতে পারে
+    return Math.max(1.01, outcome).toFixed(2);
 }
 
 // ২. গেম ইঞ্জিন (অটোমেটিক মাল্টিপ্লায়ার বাড়বে)
