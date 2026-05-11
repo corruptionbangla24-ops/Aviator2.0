@@ -349,7 +349,7 @@ function changeAmt(id, val) {
         if (!isCrashed) {
             // ডিসপ্লে ভ্যালু যদি টার্গেটের চেয়ে কম হয়, তবে ধীরে ধীরে বাড়াও
             if (displayMultiplier < targetMultiplier) {
-                displayMultiplier += 0.005; // এটি বাড়ালে এনিমেশন ফাস্ট হবে
+                displayMultiplier += 0.012; // এটি বাড়ালে এনিমেশন ফাস্ট হবে
             }
             mText.innerText = displayMultiplier.toFixed(2) + "x";
             mText.style.color = "white";
