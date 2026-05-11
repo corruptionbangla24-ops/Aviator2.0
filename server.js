@@ -88,8 +88,7 @@ app.get('/setup-database', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-const PORT = process.env.PORT || 3000;
-// ১. বেট ধরার API
+
 app.post('/api/place-bet', async (req, res) => {
     const { amount } = req.body;
     try {
