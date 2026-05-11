@@ -112,7 +112,8 @@
                 </div>
             </div>
         </div>
-<div class="bet-card" id="p2">
+
+<div class="bet-card" id="p2" style="margin-bottom: 20px;">
     <div class="tabs">
         <div class="tab active-tab" onclick="toggleTab(2, 'bet')">Bet</div>
         <div class="tab" onclick="toggleTab(2, 'auto')">Auto</div>
@@ -121,7 +122,7 @@
         <div class="amount-section">
             <div class="input-box">
                 <button onclick="changeAmt(2, -5)">-</button>
-                <b id="amt-2">5</b>
+                <b id="amt-2">1020</b>
                 <button onclick="changeAmt(2, 5)">+</button>
             </div>
             <div class="grid-btns">
@@ -131,12 +132,16 @@
         </div>
         <button class="main-btn" id="btn-2" onclick="handleAction(2)">BET</button>
     </div>
-    <!-- অটো সেটিংস সেকশন -->
-    <div id="auto-2" class="auto-settings" style="display: none;">
-        <div class="auto-row">Auto Bet <div class="toggle" onclick="toggleAuto(2, 'bet')"></div></div>
-        <div class="auto-row">Auto Cashout 
-            <div style="display:flex; align-items:center; gap:5px;">
-                <div class="toggle" onclick="toggleAuto(2, 'cashout')"></div> 
+    <!-- এই ডিভটি যেন মূল কার্ডের ভেতরে থাকে -->
+    <div id="auto-2" class="auto-settings" style="display: none; padding-top: 10px; border-top: 1px solid #333;">
+        <div class="auto-row" style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>Auto Bet</span>
+            <div class="toggle" onclick="toggleAuto(2, 'bet')"></div>
+        </div>
+        <div class="auto-row" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Auto Cashout</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div class="toggle on" onclick="toggleAuto(2, 'cashout')"></div> 
                 <div class="val-box" id="auto-val-2" onclick="setAutoValue(2)">2.00x</div>
             </div>
         </div>
