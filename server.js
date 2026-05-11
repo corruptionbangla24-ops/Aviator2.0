@@ -47,7 +47,7 @@ async function runGameEngine() {
                 await conn.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = false WHERE id = 1', [currentMult]);
             }
         }
-    }, 150); // গেমের গতি ঠিক রাখতে ১৫০ms ব্যবহার করা হয়েছে
+    }, 100); // গেমের গতি ঠিক রাখতে ১৫০ms ব্যবহার করা হয়েছে
 }
 
 runGameEngine();
