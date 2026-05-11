@@ -164,7 +164,8 @@
 planeImg.src = 'helicopter.png';
 const blastImg = new Image();
 blastImg.src = 'explosion.png'; 
- 
+ let hoverStep = 0;
+
     // ১. গ্লোবাল ভেরিয়েবল
     let isBetting = false;
     let currentBetAmount = 0;
@@ -226,41 +227,47 @@ blastImg.src = 'explosion.png';
             }
         } catch (error) { console.log("Sync error..."); }
     }
-
-  function drawCurve(val, crashed) {
+function drawCurve(val, crashed) {
     if (!canvas) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // ক্যানভাসের উইথ এবং হাইট অনুযায়ী স্কেলিং করা
-    // val যত বাড়বে, গ্রাফ তত সংকুচিত হবে যেন বক্সের বাইরে না যায়
-    let scaleX = Math.min(canvas.width / (val + 2), 40); 
-    let scaleY = Math.min(canvas.height / (val + 5), 12);
+    // ১. ডাইনামিক স্কেলিং (যাতে বক্সের বাইরে না যায়)
+    let maxX = canvas.width - 60;  
+    let maxY = canvas.height - 60; 
+    
+    let endX = Math.min(val * (canvas.width / 12), maxX);
+    let endY = Math.max(canvas.height - 35 - (val * (canvas.height / 18)), 45);
 
-    let endX = val * scaleX;
-    let endY = canvas.height - (val * scaleY) - 20; // নিচ থেকে ২০ পিক্সেল উপরে থাকবে
-
-    // ১. লাল কার্ভ লাইন আঁকা
+    // ২. লাল কার্ভ লাইন আঁকা
     ctx.beginPath();
     ctx.strokeStyle = crashed ? "#555" : "#ff0044";
     ctx.lineWidth = 5;
-    ctx.moveTo(0, canvas.height - 20); // নিচ থেকে শুরু হবে
-    
-    ctx.quadraticCurveTo(endX / 2, canvas.height - 20, endX, endY);
+    ctx.lineCap = "round";
+    ctx.moveTo(0, canvas.height - 35);
+    ctx.quadraticCurveTo(endX / 2, canvas.height - 35, endX, endY);
     ctx.stroke();
 
-    // ২. হেলিকপ্টার ছবি (বক্সের ভেতরে সীমাবদ্ধ রাখা)
+    // ৩. হেলিকপ্টার এনিমেশন (উঠানামা এবং বক্সের ভেতর লক)
     if (!crashed && planeImg.complete) {
-        const size = 80;
-        // ছবির পজিশন যেন বক্সের বর্ডারে আটকে না যায়
-        let drawX = Math.min(endX - (size / 2), canvas.width - size);
-        let drawY = Math.max(endY - (size / 2), 0);
+        hoverStep += 0.08; 
+        let hoverOffset = Math.sin(hoverStep) * 8; 
         
-        ctx.drawImage(planeImg, drawX, drawY, size, size);
+        const size = 80;
+        let planeX = endX - (size / 2);
+        let planeY = (endY + hoverOffset) - (size / 2);
+        
+        // বাউন্ডারি লক
+        planeX = Math.max(5, Math.min(planeX, canvas.width - size - 5));
+        planeY = Math.max(5, Math.min(planeY, canvas.height - size - 5));
+        
+        ctx.drawImage(planeImg, planeX, planeY, size, size);
     } else if (crashed && blastImg.complete) {
         const bSize = 90;
-        ctx.drawImage(blastImg, endX - (bSize / 2), endY - (bSize / 2), bSize, bSize);
+        ctx.drawImage(blastImg, endX - bSize/2, endY - bSize/2, bSize, bSize);
     }
 }
+
+  
   
     // ৪. বেটিং ও ক্যাশআউট বাটন ফাংশন
     async function handleAction(id) {
