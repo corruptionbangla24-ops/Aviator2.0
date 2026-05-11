@@ -291,22 +291,28 @@ function changeAmt(id, val) {
     }
 }
 
-// কুইক বাটন (১০০, ২০০, ৫০০) সেট করার ফাংশন
-function setAmt(id, val) {
-    document.getElementById('amt-' + id).innerText = val;
-}
-
-    function setAutoValue(panel) {
-        let newValue = prompt("Enter Auto Cashout (e.g. 1.50):", autoCashoutValue1);
-        if (newValue && !isNaN(newValue) && newValue >= 1.01) {
-            autoCashoutValue1 = parseFloat(newValue);
-            let display = document.getElementById('auto-val-' + panel);
-            if (display) display.innerText = autoCashoutValue1.toFixed(2) + "x";
+        // ১. কুইক বাটন (১০০, ২০০, ৫০০) সেট করার ফাংশন
+        function setAmt(id, val) {
+            document.getElementById('amt-' + id).innerText = val;
+            document.getElementById('s-click').play(); // ক্লিক সাউন্ড
         }
-    }
 
-    // প্রতি ৫০০ মিলিসেকেন্ডে আপডেট
-    setInterval(updateGame, 500);
+        // ২. অটো ক্যাশআউট ভ্যালু সেট করার ফাংশন
+        function setAutoValue(panel) {
+            let newValue = prompt("Enter Auto Cashout Value (e.g. 1.50):", autoCashoutValue1);
+            if (newValue && !isNaN(newValue) && newValue >= 1.01) {
+                autoCashoutValue1 = parseFloat(newValue);
+                let display = document.getElementById('auto-val-' + panel);
+                if (display) {
+                    display.innerText = autoCashoutValue1.toFixed(2) + "x";
+                    document.getElementById('s-click').play(); // ক্লিক সাউন্ড
+                }
+            }
+        }
+
+        // ৩. প্রতি ৫০০ মিলিসেকেন্ডে গেম আপডেট
+        setInterval(updateGame, 500);
+
 </script>   
 </body>
 </html>
