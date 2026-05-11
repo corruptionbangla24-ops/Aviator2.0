@@ -227,36 +227,43 @@ blastImg.src = 'explosion.png';
             }
         } catch (error) { console.log("Sync error..."); }
     }
+
 function drawCurve(val, crashed) {
     if (!canvas) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // ১. ডাইনামিক স্কেলিং (যাতে বক্সের বাইরে না যায়)
-    let maxX = canvas.width - 60;  
-    let maxY = canvas.height - 60; 
-    
+    // ১. ডাইনামিক স্কেলিং ও বেস পজিশন
+    let maxX = canvas.width - 70;  
+    let maxY = canvas.height - 70; 
     let endX = Math.min(val * (canvas.width / 12), maxX);
     let endY = Math.max(canvas.height - 35 - (val * (canvas.height / 18)), 45);
 
-    // ২. লাল কার্ভ লাইন আঁকা
+    // ঢেউয়ের মান (Wave Offset)
+    hoverStep += 0.08;
+    let waveOffset = Math.sin(hoverStep) * 10; // এটিই ঢেউ তৈরি করবে
+
+    // ২. লাল কার্ভ লাইন আঁকা (পুরো লাইন ঢেউ খেলবে)
     ctx.beginPath();
     ctx.strokeStyle = crashed ? "#555" : "#ff0044";
     ctx.lineWidth = 5;
     ctx.lineCap = "round";
     ctx.moveTo(0, canvas.height - 35);
-    ctx.quadraticCurveTo(endX / 2, canvas.height - 35, endX, endY);
+    
+    // কন্ট্রোল পয়েন্ট এবং এন্ড পয়েন্টে ঢেউ যোগ করা
+    let ctrlX = endX / 2;
+    let ctrlY = (canvas.height - 35 + (crashed ? 0 : waveOffset)); 
+    let currentEndY = endY + (crashed ? 0 : waveOffset);
+
+    ctx.quadraticCurveTo(ctrlX, ctrlY, endX, currentEndY);
     ctx.stroke();
 
-    // ৩. হেলিকপ্টার এনিমেশন (উঠানামা এবং বক্সের ভেতর লক)
+    // ৩. হেলিকপ্টার এনিমেশন (লাইনের মাথার সাথে ঢেউ খেলবে)
     if (!crashed && planeImg.complete) {
-        hoverStep += 0.08; 
-        let hoverOffset = Math.sin(hoverStep) * 8; 
-        
         const size = 80;
         let planeX = endX - (size / 2);
-        let planeY = (endY + hoverOffset) - (size / 2);
+        let planeY = currentEndY - (size / 2);
         
-        // বাউন্ডারি লক
+        // বাউন্ডারি লক (বক্সের বাইরে যাবে না)
         planeX = Math.max(5, Math.min(planeX, canvas.width - size - 5));
         planeY = Math.max(5, Math.min(planeY, canvas.height - size - 5));
         
