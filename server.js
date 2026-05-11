@@ -35,28 +35,40 @@ let crashPoint = generateCrashPoint();
 let isCrashed = false;
 
 async function runGameEngine() {
-    const conn = await mysql.createConnection(dbConfig);
-    
-    setInterval(async () => {
-        if (!isCrashed) {
-            currentMult += 0.01;
-            
-            if (currentMult >= crashPoint) {
-                isCrashed = true;
-                await conn.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = true WHERE id = 1', [currentMult]);
+    try {
+        const pool = await mysql.createPool(dbConfig); // পুল ব্যবহার করা নিরাপদ
+        
+        setInterval(async () => {
+            if (!isCrashed) {
+                // ১. মাল্টিপ্লায়ার বাড়ার হার (এখানে ০.০১ করে বাড়বে)
+                currentMult += 0.01;
                 
-                // ৫ সেকেন্ড পর নতুন রাউন্ড শুরু
-                setTimeout(() => {
-                    currentMult = 1.00;
-                    isCrashed = false;
-                    crashPoint = generateCrashPoint();
-                }, 5000);
-            } else {
-                await conn.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = false WHERE id = 1', [currentMult]);
+                // ২. চেক করা হচ্ছে এটি কি ক্রাশ পয়েন্টে পৌঁছেছে?
+                if (parseFloat(currentMult) >= parseFloat(crashPoint)) {
+                    isCrashed = true;
+                    
+                    // ডাটাবেসে ক্রাশ স্ট্যাটাস সেভ
+                    await pool.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = true WHERE id = 1', [currentMult]);
+                    
+                    console.log(`Crashed at: ${currentMult}. Next round in 5s...`);
+
+                    // ৩. ৫ সেকেন্ড বিরতি দিয়ে নতুন রাউন্ড শুরু
+                    setTimeout(() => {
+                        currentMult = 1.00;
+                        isCrashed = false;
+                        crashPoint = generateCrashPoint(); // এখানে নতুন র‍্যান্ডম ক্রাশ পয়েন্ট তৈরি হবে
+                    }, 5000);
+                } else {
+                    // গেম সচল থাকলে ডাটাবেস আপডেট
+                    await pool.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = false WHERE id = 1', [currentMult]);
+                }
             }
-        }
-    }, 100); // গেমের গতি ঠিক রাখতে ১৫০ms ব্যবহার করা হয়েছে
+        }, 100); // প্রতি ১০০ মিলিসেকেন্ডে ইঞ্জিনটি চেক করবে
+    } catch (err) {
+        console.error("Engine Error:", err.message);
+    }
 }
+
 
 runGameEngine();
 
