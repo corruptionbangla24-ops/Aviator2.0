@@ -228,66 +228,71 @@ blastImg.src = 'explosion.png';
         } catch (error) { console.log("Sync error..."); }
     }
 
-let rotorAngle = 0; // পাখার ঘূর্ণন কোণ
+let rotorAngle = 0; 
 
 function drawCurve(val, crashed) {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // ১. ডাইনামিক স্কেলিং ও যাত্রা শুরু
+    // ১. ১০০০% একুরেট পজিশন ক্যালকুলেশন
     let maxX = canvas.width - 90;  
     let maxY = 50; 
-    let endX = Math.min((val - 1) * (canvas.width / 8), maxX);
+    
+    // লাইনের শেষ মাথার স্থানাঙ্ক (x, y)
+    let endX = Math.min((val - 1) * (canvas.width / 10), maxX);
     let endY = Math.max((canvas.height - 15) - ((val - 1) * (canvas.height / 12)), maxY);
 
+    // ঢেউয়ের মান (Wave Offset)
     hoverStep += 0.07;
     let waveOffset = crashed ? 0 : Math.sin(hoverStep) * 10; 
+    
+    // হেলিকপ্টার এবং লাইনের মাথাকে একই উচ্চতায় লক করা
+    let finalY = endY + waveOffset;
 
-    // ২. লাল কার্ভ লাইন আঁকা (কর্ণার থেকে শুরু ও ঢেউ)
+    // ২. লাল কার্ভ লাইন আঁকা (যাত্রা শুরু কর্ণার থেকে)
     ctx.beginPath();
     ctx.strokeStyle = crashed ? "#555" : "#ff0044";
     ctx.lineWidth = 5;
     ctx.lineCap = "round";
-    let startX = 0, startY = canvas.height - 5;
+    
+    let startX = 0;
+    let startY = canvas.height - 10;
     ctx.moveTo(startX, startY);
     
-    let currentEndY = endY + waveOffset;
-    let ctrlX = endX / 2, ctrlY = startY + waveOffset;
-    ctx.quadraticCurveTo(ctrlX, ctrlY, endX, currentEndY);
+    // লাইনটি হেলিকপ্টারের পজিশনের সাথে ঢেউ খেলবে
+    let ctrlX = endX / 2;
+    let ctrlY = startY + waveOffset; 
+    ctx.quadraticCurveTo(ctrlX, ctrlY, endX, finalY);
     ctx.stroke();
 
-    // ৩. হেলিকপ্টার ও ঘূর্ণমান পাখা এনিমেশন
+    // ৩. হেলিকপ্টার এনিমেশন (১০০০% লকড পজিশন)
     if (!crashed && planeImg.complete) {
-        const size = 100; // হেলিকপ্টারের সাইজ ১০০ করা হয়েছে (আগে ৮০ ছিল)
+        const size = 110; // আপনার চাহিদা অনুযায়ী আরও বড় (১১০)
+        
+        // ছবিটিকে লাইনের মাথার একদম মাঝখানে বসানো
         let planeX = endX - (size / 2);
-        let planeY = currentEndY - (size / 2);
+        let planeY = finalY - (size / 2);
         
-        // বক্সের বাইরে যাবে না
-        planeX = Math.max(5, Math.min(planeX, canvas.width - size - 5));
-        planeY = Math.max(5, Math.min(planeY, canvas.height - size - 5));
-        
-        // হেলিকপ্টার ছবি আঁকা
+        // ৪. পাখা ঘোরার লজিক
+        rotorAngle += 0.6; 
         ctx.drawImage(planeImg, planeX, planeY, size, size);
 
-        // --- পাখা ঘোরার লজিক (Propeller) ---
-        rotorAngle += 0.5; // ঘূর্ণন গতি
         ctx.save();
-        ctx.translate(planeX + size/2, planeY + size/4); // হেলিকপ্টারের মাথার ওপর পজিশন
+        // পাখাকে হেলিকপ্টারের মাথার ওপর সেন্টারিং করা
+        ctx.translate(planeX + size/2, planeY + size/4); 
         ctx.rotate(rotorAngle);
-        
-        // প্রধান পাখা (Main Rotor)
         ctx.beginPath();
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
-        ctx.lineWidth = 4;
-        ctx.moveTo(-size/2.2, 0);
-        ctx.lineTo(size/2.2, 0);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.lineWidth = 5;
+        ctx.moveTo(-size/2.5, 0);
+        ctx.lineTo(size/2.5, 0);
         ctx.stroke();
-        
         ctx.restore();
+        
     } else if (crashed && blastImg.complete) {
-        const bSize = 110;
-        ctx.drawImage(blastImg, endX - bSize/2, currentEndY - bSize/2, bSize, bSize);
+        const bSize = 120;
+        ctx.drawImage(blastImg, endX - bSize/2, finalY - bSize/2, bSize, bSize);
     }
 }
 
