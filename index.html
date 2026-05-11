@@ -175,25 +175,22 @@ blastImg.src = 'explosion.png';
     const balanceDisplay = document.querySelector('.balance-display');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-
-    // ২. গেম ডাটা এবং অটো-লজিক আপডেট
     async function updateGame() {
         try {
             const response = await fetch('/api/game-data');
             const data = await response.json();
-            let val = parseFloat(data.multiplier);
+            
+            // সার্ভার থেকে আসা ভ্যালুগুলো গ্লোবাল ভেরিয়েবলে রাখা (রেন্ডার হবে আলাদা লুপে)
+            targetMultiplier = parseFloat(data.multiplier);
+            isCrashed = (data.is_crashed == 1);
 
-            if (data.is_crashed == 1) {
-                mText.innerText = "FLEW AWAY!";
-                mText.style.color = "red";
-                drawCurve(val, true);
-                // --- ক্রাশ সাউন্ড লজিক ---
-                const flySound = document.getElementById('s-fly');
-                const crashSound = document.getElementById('s-crash');
-                if (flySound) { flySound.pause(); flySound.currentTime = 0; }
-                if (crashSound) crashSound.play();
+            // ব্যালেন্স আপডেট
+            if (balanceDisplay && data.balance) {
+                balanceDisplay.innerText = parseFloat(data.balance).toFixed(2) + " BDT";
+            }
 
-                // যখন ক্রাশ হবে তখন বাটন রিসেট
+            // ১. ক্রাশ হলে বাটন এবং সাউন্ড রিসেট
+            if (isCrashed) {
                 if (isBetting) {
                     isBetting = false;
                     document.querySelectorAll('.main-btn').forEach(btn => {
@@ -201,32 +198,32 @@ blastImg.src = 'explosion.png';
                         btn.classList.remove('cashout');
                     });
                 }
+                // ক্রাশ সাউন্ড লজিক
+                const flyS = document.getElementById('s-fly');
+                const crashS = document.getElementById('s-crash');
+                if (flyS) { flyS.pause(); flyS.currentTime = 0; }
+                if (crashS) crashS.play().catch(e => {});
 
                 // ৫ সেকেন্ড পর অটো বেট চেক
                 if (isAutoBet1 && !isBetting) {
                     setTimeout(() => { if(isAutoBet1) handleAction(1); }, 5000);
                 }
             } else {
-                mText.innerText = val.toFixed(2) + "x";
-                mText.style.color = "white";
-                drawCurve(val, false);
-                // --- ওড়ার সাউন্ড লজিক (ইঞ্জিন লুপ) ---
-                const flySound = document.getElementById('s-fly');
-                if (flySound && flySound.paused && val > 1.00) {
-                    flySound.play().catch(e => console.log("Sound enabled after click"));
+                // ২. প্লেন ওড়ার সাউন্ড লজিক
+                const flyS = document.getElementById('s-fly');
+                if (flyS && flyS.paused && targetMultiplier > 1.05) {
+                    flyS.play().catch(e => {});
                 }
-
-                // --- অটো ক্যাশআউট চেক ---
-                if (isBetting && isAutoCashout1 && val >= autoCashoutValue1) {
+                
+                // ৩. অটো ক্যাশআউট চেক
+                if (isBetting && isAutoCashout1 && targetMultiplier >= autoCashoutValue1) {
                     handleAction(1);
                 }
             }
-
-            if (balanceDisplay && data.balance) {
-                balanceDisplay.innerText = parseFloat(data.balance).toFixed(2) + " BDT";
-            }
-        } catch (error) { console.log("Reconnecting..."); }
+        } catch (error) { console.log("Sync error..."); }
     }
+
+    
 
   function drawCurve(val, crashed) {
     if (!canvas) return;
