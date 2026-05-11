@@ -228,34 +228,34 @@ blastImg.src = 'explosion.png';
         } catch (error) { console.log("Reconnecting..."); }
     }
 
-    function drawCurve(val, crashed) {
+  function drawCurve(val, crashed) {
     if (!canvas) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    let endX = val * 40;
-    let endY = 150 - (val * 12);
-
-    // ২. লাল দাগ আঁকা
+    // ১. লাল কার্ভ লাইন আঁকা
     ctx.beginPath();
     ctx.strokeStyle = crashed ? "#555" : "#ff0044";
     ctx.lineWidth = 5;
     ctx.moveTo(0, 150);
+    
+    let endX = val * 40;
+    let endY = 150 - (val * 12);
+    
     ctx.quadraticCurveTo(val * 20, 150, endX, endY);
     ctx.stroke();
 
-    if (!crashed) {
-        // ৩. হেলিকপ্টার উড়ছে
-        ctx.drawImage(planeImg, endX - 20, endY - 20, 40, 40);
-    } else {
-        // ৪. গেম ওভার: বোম ব্লাস্ট এনিমেশন (ক্রাশ হওয়ার সাথে সাথে)
-        ctx.drawImage(blastImg, endX - 25, endY - 25, 50, 50);
-        
-        // গেম ওভার টেক্সট (ঐচ্ছিক)
-        ctx.fillStyle = "yellow";
-        ctx.font = "bold 16px Arial";
-        ctx.fillText("GAME OVER", endX - 40, endY - 30);
+    // ২. হেলিক্পটার ছবি (সাইজ ৮০ করা হয়েছে)
+    if (!crashed && planeImg.complete) {
+        const size = 80; // সাইজ ৮০ পিক্সেল
+        // ছবিটিকে লাইনের মাথার সাথে নিখুঁতভাবে বসানো
+        ctx.drawImage(planeImg, endX - (size / 2), endY - (size / 2), size, size);
+    } else if (crashed && blastImg.complete) {
+        // ক্রাশ হলে ব্লাস্ট সাইজ (একটু বড় ৯০ দিলে ভালো লাগবে)
+        const bSize = 90;
+        ctx.drawImage(blastImg, endX - (bSize / 2), endY - (bSize / 2), bSize, bSize);
     }
 }
+  
 
 
     // ৪. বেটিং ও ক্যাশআউট বাটন ফাংশন
