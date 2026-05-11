@@ -79,41 +79,37 @@
             <canvas id="canvas"></canvas>
             <div id="multiplier">1.00x</div>
         </div>
-
-        <!-- প্যানেল ১ -->
-        <div class="bet-card" id="p1">
-            <div class="tabs">
-                <div class="tab active-tab" onclick="toggleTab(1, 'bet')">Bet</div>
-                <div class="tab" onclick="toggleTab(1, 'auto')">Auto</div>
+<div class="bet-card" id="p1">
+    <div class="tabs">
+        <div class="tab active-tab" onclick="toggleTab(1, 'bet')">Bet</div>
+        <div class="tab" onclick="toggleTab(1, 'auto')">Auto</div>
+    </div>
+    <div class="panel-layout">
+        <div class="amount-section">
+            <div class="input-box">
+                <button onclick="changeAmt(1, -5)">-</button>
+                <b id="amt-1">100</b>
+                <button onclick="changeAmt(1, 5)">+</button>
             </div>
-                     <div class="panel-layout">
-                <div class="amount-section">
-                    <div class="input-box">
-                        <!-- ৫ টাকা কমাবে -->
-                        <button onclick="changeAmt(1, -5)">-</button>
-                        <b id="amt-1">10</b>
-                        <!-- ৫ টাকা বাড়াবে -->
-                        <button onclick="changeAmt(1, 5)">+</button>
-                    </div>
-                    <div class="grid-btns">
-                        <!-- কুইক সেট বাটন -->
-                        <button class="q-btn" onclick="setAmt(1, 50)">50</button>
-                        <button class="q-btn" onclick="setAmt(1, 100)">100</button>
-                    </div>
-                </div>
-                <button class="main-btn" id="btn-1" onclick="handleAction(1)">BET</button>
-                <div id="auto-1" class="auto-settings">
-                    <div class="auto-row">Auto Bet <div class="toggle" onclick="this.classList.toggle('on')"></div></div>
-                    <div class="auto-row">Auto Cashout <div style="display:flex; align-items:center; gap:5px;">
-                       <div class="val-box" id="auto-val-1" onclick="setAutoValue(1)">2.00x</div>
-
-
-                    </div></div>
-                </div>
+            <div class="grid-btns">
+                <button class="q-btn" onclick="setAmt(1, 50)">50</button>
+                <button class="q-btn" onclick="setAmt(1, 100)">100</button>
             </div>
         </div>
-
-<div class="bet-card" id="p2" style="margin-bottom: 20px;">
+        <button class="main-btn" id="btn-1" onclick="handleAction(1)">BET</button>
+    </div>
+    <!-- প্যানেল ১ এর অটো সেটিংস -->
+    <div id="auto-1" class="auto-settings" style="display: none;">
+        <div class="auto-row">Auto Bet <div class="toggle" onclick="toggleAuto(1, 'bet')"></div></div>
+        <div class="auto-row">Auto Cashout 
+            <div style="display:flex; align-items:center; gap:5px;">
+                <div class="toggle" onclick="toggleAuto(1, 'cashout')"></div> 
+                <div class="val-box" id="auto-val-1" onclick="setAutoValue(1)">2.00x</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="bet-card" id="p2">
     <div class="tabs">
         <div class="tab active-tab" onclick="toggleTab(2, 'bet')">Bet</div>
         <div class="tab" onclick="toggleTab(2, 'auto')">Auto</div>
@@ -132,39 +128,17 @@
         </div>
         <button class="main-btn" id="btn-2" onclick="handleAction(2)">BET</button>
     </div>
-    <!-- এই ডিভটি যেন মূল কার্ডের ভেতরে থাকে -->
-    <div id="auto-2" class="auto-settings" style="display: none; padding-top: 10px; border-top: 1px solid #333;">
-        <div class="auto-row" style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-            <span>Auto Bet</span>
-            <div class="toggle" onclick="toggleAuto(2, 'bet')"></div>
-        </div>
-        <div class="auto-row" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>Auto Cashout</span>
-            <div style="display:flex; align-items:center; gap:8px;">
-                <div class="toggle on" onclick="toggleAuto(2, 'cashout')"></div> 
+    <!-- প্যানেল ২ এর অটো সেটিংস -->
+    <div id="auto-2" class="auto-settings" style="display: none;">
+        <div class="auto-row">Auto Bet <div class="toggle" onclick="toggleAuto(2, 'bet')"></div></div>
+        <div class="auto-row">Auto Cashout 
+            <div style="display:flex; align-items:center; gap:5px;">
+                <div class="toggle" onclick="toggleAuto(2, 'cashout')"></div> 
                 <div class="val-box" id="auto-val-2" onclick="setAutoValue(2)">2.00x</div>
             </div>
         </div>
     </div>
 </div>
-
-        
-                <button class="main-btn" id="btn-2" onclick="handleAction(2)">BET</button>
-                <!-- প্যানেল ১ এর জন্য উদাহরণ -->
-<div class="auto-row">
-    Auto Bet 
-    <div class="toggle" onclick="toggleAuto(1, 'bet')"></div>
-</div>
-<div class="auto-row">
-    Auto Cashout 
-    <div style="display:flex; align-items:center; gap:5px;">
-        <div class="toggle" onclick="toggleAuto(1, 'cashout')"></div> 
-        <div class="val-box" onclick="setAutoValue(1)">2.00x</div>
-        <div class="val-box" id="auto-val-1" onclick="setAutoValue(1)">2.00x</div>
-
-    </div>
-</div>
-
 
         <!-- প্লেয়ার লিস্ট টেবিল -->
         <div class="live-bets">
