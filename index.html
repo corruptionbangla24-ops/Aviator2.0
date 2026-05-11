@@ -86,16 +86,19 @@
                 <div class="tab active-tab" onclick="toggleTab(1, 'bet')">Bet</div>
                 <div class="tab" onclick="toggleTab(1, 'auto')">Auto</div>
             </div>
-            <div class="panel-layout">
+        di             <div class="panel-layout">
                 <div class="amount-section">
                     <div class="input-box">
-                        <button onclick="changeAmt(1, -10)">-</button>
-                        <b id="amt-1">90</b>
-                        <button onclick="changeAmt(1, 10)">+</button>
+                        <!-- ৫ টাকা কমাবে -->
+                        <button onclick="changeAmt(1, -5)">-</button>
+                        <b id="amt-1">10</b>
+                        <!-- ৫ টাকা বাড়াবে -->
+                        <button onclick="changeAmt(1, 5)">+</button>
                     </div>
                     <div class="grid-btns">
+                        <!-- কুইক সেট বাটন -->
+                        <button class="q-btn" onclick="setAmt(1, 50)">50</button>
                         <button class="q-btn" onclick="setAmt(1, 100)">100</button>
-                        <button class="q-btn" onclick="setAmt(1, 200)">200</button>
                     </div>
                 </div>
                 <button class="main-btn" id="btn-1" onclick="handleAction(1)">BET</button>
