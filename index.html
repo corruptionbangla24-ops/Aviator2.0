@@ -233,7 +233,7 @@
     }
     // ২২৯ নম্বর লাইন পর্যন্ত শেষ
   
-    let rotorAngle = 0; 
+    
 
     function drawCurve(val, crashed) {
         if (!canvas) return;
@@ -394,7 +394,7 @@
             el.innerText = val;
             if(document.getElementById('s-click')) document.getElementById('s-click').play();
         }
-    
+    }
     function setAutoValue(panel) {
         let newValue = prompt("অটো ক্যাশআউট ভ্যালু সেট করুন (যেমন: 1.50):", autoCashoutValue1);
         if (newValue && !isNaN(newValue) && newValue >= 1.01) {
