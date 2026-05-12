@@ -46,7 +46,8 @@ async function startEngine() {
                     isCrashed = true;
                     
                     // ডাটাবেসে ক্রাশ স্ট্যাটাস এবং ফাইনাল মাল্টিপ্লায়ার সেভ
-                    await pool.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = true WHERE id = 1', [currentMult.toFixed(2)]);
+                    await pool.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = true WHERE id = 1', [currentMult]);
+
                     
                     console.log(`RTP Crash Triggered at: ${currentMult}`);
 
@@ -58,7 +59,8 @@ async function startEngine() {
                     }, 5000);
                 } else {
                     // গেম সচল থাকলে ডাটাবেস আপডেট (is_crashed = false নিশ্চিত করা)
-                    await pool.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = false WHERE id = 1', [currentMult.toFixed(2)]);
+                     await pool.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = false WHERE id = 1', [currentMult]);
+
                 }
             }
         }, 100); // ১০০ মিলিসেকেন্ডে আপডেট (গেম অনেক ফাস্ট হবে)
