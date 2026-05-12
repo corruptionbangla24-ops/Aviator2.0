@@ -160,11 +160,13 @@
     </div>
         
    <script>
-      const planeImg = new Image();
-planeImg.src = 'helicopter.png';
-const blastImg = new Image();
-blastImg.src = 'explosion.png'; 
- let hoverStep = 0;
+        // ১৬২ নম্বর লাইন থেকে শুরু
+    const planeImg = new Image();
+    planeImg.src = 'helicopter.png';
+    const blastImg = new Image();
+    blastImg.src = 'explosion.png';
+    let hoverStep = 0;
+    let rotorAngle = 0; // পাখার জন্য
 
     // ১. গ্লোবাল ভেরিয়েবল
     let isBetting = false;
@@ -172,7 +174,7 @@ blastImg.src = 'explosion.png';
     let isAutoBet1 = false;
     let isAutoCashout1 = false;
     let autoCashoutValue1 = 2.00;
-    let targetMultiplier = 1.00; 
+    let targetMultiplier = 1.00;
     let displayMultiplier = 1.00;
     let isCrashed = false;
 
@@ -180,12 +182,13 @@ blastImg.src = 'explosion.png';
     const balanceDisplay = document.querySelector('.balance-display');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
+
     async function updateGame() {
         try {
             const response = await fetch('/api/game-data');
             const data = await response.json();
-            
-            // সার্ভার থেকে আসা ভ্যালুগুলো গ্লোবাল ভেরিয়েবলে রাখা (রেন্ডার হবে আলাদা লুপে)
+
+            // সার্ভার থেকে ডাটা নেওয়া
             targetMultiplier = parseFloat(data.multiplier);
             isCrashed = (data.is_crashed == 1);
 
@@ -194,7 +197,7 @@ blastImg.src = 'explosion.png';
                 balanceDisplay.innerText = parseFloat(data.balance).toFixed(2) + " BDT";
             }
 
-            // ১. ক্রাশ হলে বাটন এবং সাউন্ড রিসেট
+            // ২. ক্রাশ হলে বাটন এবং সাউন্ড রিসেট
             if (isCrashed) {
                 if (isBetting) {
                     isBetting = false;
@@ -203,6 +206,7 @@ blastImg.src = 'explosion.png';
                         btn.classList.remove('cashout');
                     });
                 }
+
                 // ক্রাশ সাউন্ড লজিক
                 const flyS = document.getElementById('s-fly');
                 const crashS = document.getElementById('s-crash');
@@ -214,19 +218,21 @@ blastImg.src = 'explosion.png';
                     setTimeout(() => { if(isAutoBet1) handleAction(1); }, 5000);
                 }
             } else {
-                // ২. প্লেন ওড়ার সাউন্ড লজিক
+                // ৩. প্লেন ওড়ার সাউন্ড লজিক
                 const flyS = document.getElementById('s-fly');
                 if (flyS && flyS.paused && targetMultiplier > 1.05) {
                     flyS.play().catch(e => {});
                 }
-                
-                // ৩. অটো ক্যাশআউট চেক
+
+                // ৪. অটো ক্যাশআউট চেক (সার্ভার ভ্যালু অনুযায়ী)
                 if (isBetting && isAutoCashout1 && targetMultiplier >= autoCashoutValue1) {
                     handleAction(1);
                 }
             }
         } catch (error) { console.log("Sync error..."); }
     }
+    // ২২৯ নম্বর লাইন পর্যন্ত শেষ
+  
 
 let rotorAngle = 0; 
 
