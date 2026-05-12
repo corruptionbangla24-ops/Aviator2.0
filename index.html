@@ -299,55 +299,62 @@
         }
     }
 async function handleAction(id) {
-    playSound('s-click');
-    let btn = document.getElementById('btn-' + id);
-    
-    if (!isBetting) {
-        // ১.১০x পর্যন্ত বেট ধরার সুযোগ দেওয়া হলো (ল্যাগ কমানোর জন্য)
-        if (targetMultiplier > 1.10) {
-            alert("পরবর্তী রাউন্ডের জন্য অপেক্ষা করুন!");
-            return;
-        }
-        currentBetAmount = parseInt(document.getElementById('amt-' + id).innerText);
-        const res = await fetch('/api/place-bet', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ amount: currentBetAmount })
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            isBetting = true;
-            btn.innerText = "CASH OUT";
-            btn.classList.add('cashout');
-        } else {
-            alert(data.message);
-        }
-    } 
-    // ২. ক্যাশআউট করার লজিক
-    else {
-        // চেক: যদি হেলিকপ্টার ক্রাশ হয়ে যায় তবে ক্যাশআউট হবে না
-        if (isCrashed) return;
+    // সাউন্ড প্লে করা
+    try {
+        const clickSound = document.getElementById('s-click');
+        if (clickSound) clickSound.play();
+    } catch (e) {}
 
-        const res = await fetch('/api/cashout', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ 
-                betAmount: currentBetAmount, 
-                multiplier: targetMultiplier 
-            })
-        });
-        
-        const data = await res.json();
-        if (data.success) {
-            alert("অভিনন্দন! আপনি জিতেছেন: " + data.win + " BDT");
-            resetBetButton(id);
-        } else {
-            alert("দুঃখিত! আপনি অনেক দেরি করে ফেলেছেন।");
-            resetBetButton(id);
+    const btn = document.getElementById('btn-' + id);
+    const amtLabel = document.getElementById('amt-' + id);
+    const currentBetAmount = parseInt(amtLabel.innerText);
+
+    if (!isBetting) {
+        // --- বেট প্লে করা ---
+        try {
+            const response = await fetch('/api/place-bet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: currentBetAmount, panel: id })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                isBetting = true;
+                btn.innerText = "CASH OUT";
+                btn.classList.add('cashout');
+                // ব্যালেন্স আপডেট
+                const balanceDisplay = document.querySelector('.balance-display');
+                if(balanceDisplay && data.balance) balanceDisplay.innerText = data.balance.toFixed(2) + " BDT";
+            } else {
+                alert(data.message || "Insufficient Balance!");
+            }
+        } catch (error) {
+            console.error("Bet Error:", error);
+            alert("Server Error! Please try again.");
+        }
+    } else {
+        // --- ক্যাশ আউট করা ---
+        try {
+            const response = await fetch('/api/cash-out', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ panel: id })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                isBetting = false;
+                btn.innerText = "BET";
+                btn.classList.remove('cashout');
+                alert("You Won: " + data.winAmount + " BDT");
+            }
+        } catch (error) {
+            console.error("Cashout Error:", error);
         }
     }
 }
+
 
     
 
