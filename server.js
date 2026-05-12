@@ -13,38 +13,61 @@ const dbConfig = {
     port: 15225,
     ssl: { rejectUnauthorized: false }
 };
-
+// ১. প্রফেশনাল RTP 90% ক্রাশ পয়েন্ট জেনারেটর
 function generateCrashPoint() {
     const r = Math.random();
-    if (r < 0.10) return 1.00; 
-    let outcome = 0.90 / (1 - r); 
-    return Math.min(Math.max(1.01, outcome), 30.00).toFixed(2);
+    
+    // ১০% রাউন্ডে সরাসরি ১.০০x এ ক্রাশ হবে (Instant Crash)
+    // এটি হাউসের ১০% প্রফিট (RTP 90%) নিশ্চিত করবে
+    if (r < 0.10) return 1.00;
+
+    // এভিয়েটর ম্যাথমেটিক্যাল ফর্মুলা (RTP 90% এর জন্য)
+    // সূত্র: (100 - HouseEdge) / (100 - r*100)
+    let outcome = 0.90 / (1 - r);
+    
+    // সর্বোচ্চ সীমা ৩০.০০x সেট করা হলো যাতে গেমটি নিয়ন্ত্রণের বাইরে না যায়
+    let finalVal = Math.min(Math.max(1.01, outcome), 30.00);
+    
+    return parseFloat(finalVal).toFixed(2);
 }
 
-let currentMult = 1.00;
-let crashPoint = generateCrashPoint();
-let isCrashed = false;
-
+// ২. গেম ইঞ্জিন (Interval) যা RTP মেনে চলবে
 async function startEngine() {
     try {
-        const conn = await mysql.createConnection(dbConfig);
+        const pool = await mysql.createPool(dbConfig); // পুল ব্যবহার করা অনেক বেশি স্মুথ
+        
         setInterval(async () => {
             if (!isCrashed) {
-                currentMult = parseFloat(currentMult) + 0.01;
+                // মাল্টিপ্লায়ার ০.০১ করে বাড়ছে
+                currentMult = (parseFloat(currentMult) + 0.01);
+
+                // ১০০০% একুরেট চেক: বর্তমান মান কি ক্রাশ পয়েন্টে পৌঁছেছে?
                 if (parseFloat(currentMult) >= parseFloat(crashPoint)) {
                     isCrashed = true;
-                    await conn.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = true WHERE id = 1', [currentMult.toFixed(2)]);
+                    
+                    // ডাটাবেসে ক্রাশ স্ট্যাটাস এবং ফাইনাল মাল্টিপ্লায়ার সেভ
+                    await pool.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = true WHERE id = 1', [currentMult.toFixed(2)]);
+                    
+                    console.log(`RTP Crash Triggered at: ${currentMult}`);
+
+                    // ৫ সেকেন্ড পর নতুন রাউন্ড শুরু
                     setTimeout(() => {
-                        currentMult = 1.00; isCrashed = false;
-                        crashPoint = generateCrashPoint();
+                        currentMult = 1.00;
+                        isCrashed = false;
+                        crashPoint = generateCrashPoint(); // এখানে নতুন RTP মেনে রেজাল্ট তৈরি হবে
                     }, 5000);
                 } else {
-                    await conn.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = false WHERE id = 1', [currentMult.toFixed(2)]);
+                    // গেম সচল থাকলে ডাটাবেস আপডেট (is_crashed = false নিশ্চিত করা)
+                    await pool.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = false WHERE id = 1', [currentMult.toFixed(2)]);
                 }
             }
-        }, 150);
-    } catch (err) { console.log("Engine Error: " + err.message); }
+        }, 100); // ১০০ মিলিসেকেন্ডে আপডেট (গেম অনেক ফাস্ট হবে)
+    } catch (err) {
+        console.error("Critical Engine Error:", err.message);
+    }
 }
+
+
 startEngine();
 
 app.get('/api/game-data', async (req, res) => {
