@@ -295,13 +295,10 @@
         }
     }
 
-
-
     async function handleAction(id) {
         const btn = document.getElementById('btn-' + id);
         const amtLabel = document.getElementById('amt-' + id);
-        const currentMult = parseFloat(mText.innerText);
-
+        
         // ১. বেট ধরার অংশ (যদি আগে থেকে বেট না থাকে)
         if (!isBetting) {
             currentBetAmount = parseInt(amtLabel.innerText);
@@ -317,7 +314,6 @@
                     isBetting = true;
                     btn.innerText = "CASH OUT";
                     btn.classList.add('cashout');
-                    // ক্লিক সাউন্ড
                     if(document.getElementById('s-click')) document.getElementById('s-click').play();
                 } else {
                     alert(data.message);
@@ -325,16 +321,19 @@
             } catch(e) { console.log("Bet Error"); }
 
         } else {
-            // ২. ক্যাশআউট করার অংশ (যদি অলরেডি বেট ধরা থাকে)
+            // ২. ক্যাশআউট করার অংশ (ল্যাগ এড়াতে targetMultiplier ব্যবহার)
             try {
-             const res = await fetch('/api/cashout', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ 
-        betAmount: currentBetAmount, 
-        multiplier: displayMultiplier // এটি নিশ্চিত করুন
-    })
-});   
+                const res = await fetch('/api/cashout', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 
+                        betAmount: currentBetAmount, 
+                        multiplier: targetMultiplier 
+                    })
+                });
+
+
+    
                 
                 const data = await res.json();
                 if (data.success) {
