@@ -302,14 +302,12 @@ async function handleAction(id) {
     playSound('s-click');
     let btn = document.getElementById('btn-' + id);
     
-    // ১. বেট ধরার চেষ্টা করলে
     if (!isBetting) {
-        // চেক: হেলিকপ্টার কি উড়ছে? (১.০০x এর বেশি হলে বেট ব্লক)
-        if (targetMultiplier > 1.00) {
-            alert("দুঃখিত! রাউন্ড শুরু হয়ে গেছে। পরবর্তী রাউন্ডের জন্য অপেক্ষা করুন।");
-            return; // এখানেই কোড থেমে যাবে
+        // ১.১০x পর্যন্ত বেট ধরার সুযোগ দেওয়া হলো (ল্যাগ কমানোর জন্য)
+        if (targetMultiplier > 1.10) {
+            alert("পরবর্তী রাউন্ডের জন্য অপেক্ষা করুন!");
+            return;
         }
-
         currentBetAmount = parseInt(document.getElementById('amt-' + id).innerText);
         const res = await fetch('/api/place-bet', {
             method: 'POST',
