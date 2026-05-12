@@ -395,63 +395,83 @@
             if(document.getElementById('s-click')) document.getElementById('s-click').play();
         }
     }
+    function setAutoValue(panel) {
+        let newValue = prompt("অটো ক্যাশআউট ভ্যালু সেট করুন (যেমন: 1.50):", autoCashoutValue1);
+        if (newValue && !isNaN(newValue) && newValue >= 1.01) {
+            autoCashoutValue1 = parseFloat(newValue);
+            let display = document.getElementById('auto-val-' + panel);
+            if (display) {
+                display.innerText = autoCashoutValue1.toFixed(2) + "x";
+                if(document.getElementById('s-click')) document.getElementById('s-click').play();
+            }
+        }
+    }
 
+    // ১. স্মুথ এনিমেশন ইঞ্জিন
+    function smoothAnimate() {
+        if (!isCrashed) {
+            // হেলিকপ্টার নিজে থেকেই ০.০১ হারে বাড়তে থাকবে (ল্যাগ কমানোর জন্য)
+            displayMultiplier += 0.01; 
 
+            // সার্ভারের ডাটার সাথে সিঙ্ক করা
+            if (displayMultiplier < targetMultiplier) {
+                displayMultiplier = targetMultiplier;
+            }
 
-        // ২. অটো ক্যাশআউট ভ্যালু সেট করার ফাংশন
-        function setAutoValue(panel) {
-            let newValue = prompt("Enter Auto Cashout Value (e.g. 1.50):", autoCashoutValue1);
-            if (newValue && !isNaN(newValue) && newValue >= 1.01) {
-                autoCashoutValue1 = parseFloat(newValue);
-                let display = document.getElementById('auto-val-' + panel);
-                if (display) {
-                    display.innerText = autoCashoutValue1.toFixed(2) + "x";
-                    document.getElementById('s-click').play(); // ক্লিক সাউন্ড
+            if (mText) {
+                mText.innerText = displayMultiplier.toFixed(2) + "x";
+                mText.style.color = "white";
+            }
+            
+            drawCurve(displayMultiplier, false);
+            updateLiveBets(displayMultiplier, false);
+
+            // অটো ক্যাশআউট চেক
+            if (isBetting && isAutoCashout1 && displayMultiplier >= autoCashoutValue1) {
+                handleAction(1);
+            }
+        } else {
+            displayMultiplier = targetMultiplier;
+            if (mText) {
+                mText.innerText = "BURSTING!";
+                mText.style.color = "red";
+            }
+            drawCurve(displayMultiplier, true);
+            updateLiveBets(displayMultiplier, true);
+        }
+        requestAnimationFrame(smoothAnimate);
+    }
+
+    // ২. লাইভ প্লেয়ার লিস্ট আপডেট (ফেক প্লেয়ার)
+    function updateLiveBets(val, crashed) {
+        const table = document.getElementById('bet-history');
+        if (!table) return;
+        if (val <= 1.05) table.innerHTML = '';
+        if (table.children.length < 5) {
+            const names = ["Aviator_Pro", "Winner_99", "Sky_King", "Lucky_User", "Bet_Master"];
+            names.forEach((n, i) => {
+                table.innerHTML += `<tr><td>${n}_${Math.floor(Math.random()*99)}</td><td>${(Math.random()*500+10).toFixed(2)}</td><td id="w-${i}">-</td></tr>`;
+            });
+        }
+        if (!crashed) {
+            for (let i=0; i<5; i++) {
+                let cell = document.getElementById(`w-${i}`);
+                if (cell && cell.innerText === "-" && Math.random() < 0.01) {
+                    let bet = parseFloat(cell.previousElementSibling.innerText);
+                    cell.innerText = (bet * val).toFixed(2);
+                    cell.style.color = "#28a745"; cell.style.fontWeight = "bold";
                 }
             }
         }
-    // ১. এনিমেশন ইঞ্জিন
-function smoothAnimate() {
-    if (!isCrashed) {
-        // সার্ভারের জন্য অপেক্ষা না করে নিজে থেকেই ০.০১ হারে বাড়তে থাকবে
-        // এটি গেমকে থেমে থেমে চলা থেকে বাঁচাবে
-        displayMultiplier += 0.01; 
-
-        // যদি ডিসপ্লে ভ্যালু সার্ভারের ভ্যালু থেকে অনেক পিছিয়ে থাকে, তবে দ্রুত সিঙ্ক করবে
-        if (displayMultiplier < targetMultiplier) {
-            displayMultiplier = targetMultiplier;
-        }
-
-        // স্ক্রিনে মাল্টিপ্লায়ার টেক্সট আপডেট
-        if (mText) {
-            mText.innerText = displayMultiplier.toFixed(2) + "x";
-            mText.style.color = "white";
-        }
-        
-        // লাল কার্ভ এবং হেলিকপ্টার ড্র করা
-        drawCurve(displayMultiplier, false);
-        
-    } else {
-        // ক্রাশ হলে সরাসরি সার্ভারের ক্রাশ ভ্যালু দেখানো
-        displayMultiplier = targetMultiplier;
-        if (mText) {
-            mText.innerText = "BURSTING!";
-            mText.style.color = "red";
-        }
-        drawCurve(displayMultiplier, true);
     }
 
-    // প্রতি সেকেন্ডে ৬০ বার ছবি আঁকবে (Smooth 60FPS)
-    requestAnimationFrame(smoothAnimate);
-}
-
-// ২. ইঞ্জিনটি প্রথমবার চালু করা
-smoothAnimate();
-
-
-        // ৩. প্রতি ৫০০ মিলিসেকেন্ডে গেম আপডেট
-        setInterval(updateGame, 500);
-
+    // ৩. ইঞ্জিন চালু এবং ডাটা আপডেট শুরু
+    smoothAnimate();
+    setInterval(updateGame, 500);
 </script>   
 </body>
 </html>
+
+
+
+        
