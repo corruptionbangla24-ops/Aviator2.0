@@ -213,9 +213,11 @@
                 if (flyS) { flyS.pause(); flyS.currentTime = 0; }
                 if (crashS) crashS.play().catch(e => {});
 
-                // ৫ সেকেন্ড পর অটো বেট চেক
+                       // ৫ সেকেন্ড পর অটো বেট চেক
                 if (isAutoBet1 && !isBetting) {
-                    setTimeout(() => { if(isAutoBet1) handleAction(1); }, 5000);
+                    setTimeout(() => { 
+                        if (isAutoBet1 && !isCrashed) handleAction(1); 
+                    }, 5000);
                 }
             } else {
                 // ৩. প্লেন ওড়ার সাউন্ড লজিক
@@ -224,14 +226,16 @@
                     flyS.play().catch(e => {});
                 }
 
-                // ৪. অটো ক্যাশআউট চেক (সার্ভার ভ্যালু অনুযায়ী)
+                // ৪. অটো ক্যাশআউট চেক
                 if (isBetting && isAutoCashout1 && targetMultiplier >= autoCashoutValue1) {
                     handleAction(1);
                 }
             }
-        } catch (error) { console.log("Sync error..."); }
+        } catch (error) { 
+            console.log("Sync error..."); 
+        }
     }
-    // ২২৯ নম্বর লাইন পর্যন্ত শেষ
+         
   
     
 
