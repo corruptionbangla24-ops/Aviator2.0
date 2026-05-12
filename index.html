@@ -233,74 +233,69 @@
     }
     // ২২৯ নম্বর লাইন পর্যন্ত শেষ
   
+    let rotorAngle = 0; 
 
-let rotorAngle = 0; 
-
-function drawCurve(val, crashed) {
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // ১. ১০০০% একুরেট পজিশন ক্যালকুলেশন
-    let maxX = canvas.width - 90;  
-    let maxY = 50; 
-    
-    // লাইনের শেষ মাথার স্থানাঙ্ক (x, y)
-    let endX = Math.min((val - 1) * (canvas.width / 10), maxX);
-    let endY = Math.max((canvas.height - 15) - ((val - 1) * (canvas.height / 12)), maxY);
-
-    // ঢেউয়ের মান (Wave Offset)
-    hoverStep += 0.07;
-    let waveOffset = crashed ? 0 : Math.sin(hoverStep) * 10; 
-    
-    // হেলিকপ্টার এবং লাইনের মাথাকে একই উচ্চতায় লক করা
-    let finalY = endY + waveOffset;
-
-    // ২. লাল কার্ভ লাইন আঁকা (যাত্রা শুরু কর্ণার থেকে)
-    ctx.beginPath();
-    ctx.strokeStyle = crashed ? "#555" : "#ff0044";
-    ctx.lineWidth = 5;
-    ctx.lineCap = "round";
-    
-    let startX = 0;
-    let startY = canvas.height - 10;
-    ctx.moveTo(startX, startY);
-    
-    // লাইনটি হেলিকপ্টারের পজিশনের সাথে ঢেউ খেলবে
-    let ctrlX = endX / 2;
-    let ctrlY = startY + waveOffset; 
-    ctx.quadraticCurveTo(ctrlX, ctrlY, endX, finalY);
-    ctx.stroke();
-
-    // ৩. হেলিকপ্টার এনিমেশন (১০০০% লকড পজিশন)
-    if (!crashed && planeImg.complete) {
-        const size = 110; // আপনার চাহিদা অনুযায়ী আরও বড় (১১০)
+    function drawCurve(val, crashed) {
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // ছবিটিকে লাইনের মাথার একদম মাঝখানে বসানো
-        let planeX = endX - (size / 2);
-        let planeY = finalY - (size / 2);
+        // ১. ১০০০% একুরেট পজিশন ক্যালকুলেশন
+        let maxX = canvas.width - 90;  
+        let maxY = 50; 
         
-        // ৪. পাখা ঘোরার লজিক
-        rotorAngle += 0.6; 
-        ctx.drawImage(planeImg, planeX, planeY, size, size);
+        let endX = Math.min((val - 1) * (canvas.width / 10), maxX);
+        let endY = Math.max((canvas.height - 15) - ((val - 1) * (canvas.height / 12)), maxY);
 
-        ctx.save();
-        // পাখাকে হেলিকপ্টারের মাথার ওপর সেন্টারিং করা
-        ctx.translate(planeX + size/2, planeY + size/4); 
-        ctx.rotate(rotorAngle);
+        // ঢেউয়ের মান (Wave Offset)
+        hoverStep += 0.07;
+        let waveOffset = crashed ? 0 : Math.sin(hoverStep) * 10; 
+        let finalY = endY + waveOffset;
+
+        // ২. লাল কার্ভ লাইন আঁকা (যাত্রা শুরু কর্ণার থেকে)
         ctx.beginPath();
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.strokeStyle = crashed ? "#444" : "#ff0044";
         ctx.lineWidth = 5;
-        ctx.moveTo(-size/2.5, 0);
-        ctx.lineTo(size/2.5, 0);
-        ctx.stroke();
-        ctx.restore();
+        ctx.lineCap = "round";
         
-    } else if (crashed && blastImg.complete) {
-        const bSize = 120;
-        ctx.drawImage(blastImg, endX - bSize/2, finalY - bSize/2, bSize, bSize);
+        let startX = 0;
+        let startY = canvas.height - 10;
+        ctx.moveTo(startX, startY);
+        
+        let ctrlX = endX / 2;
+        let ctrlY = startY + waveOffset; 
+        ctx.quadraticCurveTo(ctrlX, ctrlY, endX, finalY);
+        ctx.stroke();
+
+        // ৩. হেলিকপ্টার এনিমেশন (১০০০% লকড পজিশন)
+        if (!crashed && planeImg.complete) {
+            const size = 110; 
+            let planeX = endX - (size / 2);
+            let planeY = finalY - (size / 2);
+            
+            ctx.drawImage(planeImg, planeX, planeY, size, size);
+
+            // ৪. পাখা ঘোরার লজিক
+            rotorAngle += 0.6; 
+            ctx.save();
+            ctx.translate(planeX + size/2, planeY + size/4); 
+            ctx.rotate(rotorAngle);
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+            ctx.lineWidth = 5;
+            ctx.moveTo(-size/2.5, 0);
+            ctx.lineTo(size/2.5, 0);
+            ctx.stroke();
+            ctx.restore();
+            
+        } else if (crashed && blastImg.complete) {
+            // ৫. ক্রাশ হলে ব্লাস্ট এনিমেশন
+            const bSize = 120;
+            ctx.drawImage(blastImg, endX - bSize/2, finalY - bSize/2, bSize, bSize);
+        }
     }
-}
+
+
 
     async function handleAction(id) {
         const btn = document.getElementById('btn-' + id);
