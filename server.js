@@ -6,7 +6,7 @@ app.use(express.static('./'));
 app.use(express.json());
 
 const dbConfig = {
-    host: '://aivencloud.com',
+    host: 'mysql-8138310-corruptionbangla24-843b.l.aivencloud.com',
     user: 'avnadmin',
     password: 'AVNS_PsYa4FE9fJvITOf4u0Z',
     database: 'defaultdb',
