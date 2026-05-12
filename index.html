@@ -334,44 +334,44 @@
 
 
     
+                   const data = await res.json();
                 
-                const data = await res.json();
                 if (data.success) {
                     alert("অভিনন্দন! আপনি জিতেছেন: " + data.win + " BDT");
                     
-                    // বাটন রিসেট
+                    // বাটন রিসেট লজিক
                     isBetting = false;
                     btn.innerText = "BET";
                     btn.classList.remove('cashout');
                     
-                    // ক্লিক সাউন্ড
+                    // ক্যাশআউট ক্লিক সাউন্ড
                     if(document.getElementById('s-click')) document.getElementById('s-click').play();
                 } else {
                     alert(data.message);
                 }
-            } catch(e) { console.log("Cashout Error"); }
+            } catch(e) { 
+                console.log("Cashout Error"); 
+            }
         }
     }
 
-
-  
-  
-    
-function toggleTab(p, type) {
-    const card = document.getElementById(`p${p}`);
-    const tabs = card.querySelectorAll('.tab');
-    const autoSettings = document.getElementById(`auto-${p}`);
-
-    // ট্যাব হাইলাইট পরিবর্তন
-    tabs.forEach(t => t.classList.remove('active-tab'));
-    if (type === 'bet') {
-        tabs[0].classList.add('active-tab');
-        autoSettings.style.display = 'none'; // বেট মোডে অটো সেটিংস লুকাবে
-    } else {
-        tabs[1].classList.add('active-tab');
-        autoSettings.style.display = 'grid'; // অটো মোডে সেটিংস দেখাবে
+    // ৫. সাপোর্টিং ফাংশনস (রিসেট, টগল, অ্যামাউন্ট)
+    function toggleTab(p, type) {
+        const tabs = document.querySelectorAll(`#p${p} .tab`);
+        tabs.forEach(t => t.classList.remove('active-tab'));
+        event.currentTarget.classList.add('active-tab');
+        document.getElementById(`auto-${p}`).style.display = (type === 'auto') ? 'grid' : 'none';
     }
-}
+
+    function toggleAuto(p, type) {
+        event.currentTarget.classList.toggle('on');
+        let isOn = event.currentTarget.classList.contains('on');
+        if (p === 1) {
+            if (type === 'bet') isAutoBet1 = isOn; else isAutoCashout1 = isOn;
+        }
+    }
+             
+                
 
 function changeAmt(id, val) {
     // id অনুযায়ী সঠিক প্যানেলের অ্যামাউন্ট এলিমেন্ট ধরা
