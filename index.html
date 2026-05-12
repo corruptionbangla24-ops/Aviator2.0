@@ -326,14 +326,14 @@ function drawCurve(val, crashed) {
         } else {
             // ২. ক্যাশআউট করার অংশ (যদি অলরেডি বেট ধরা থাকে)
             try {
-                const res = await fetch('/api/cashout', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        betAmount: currentBetAmount, 
-                        multiplier: currentMult 
-                    })
-                });
+             const res = await fetch('/api/cashout', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ 
+        betAmount: currentBetAmount, 
+        multiplier: displayMultiplier // এটি নিশ্চিত করুন
+    })
+});   
                 
                 const data = await res.json();
                 if (data.success) {
