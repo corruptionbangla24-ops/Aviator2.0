@@ -298,66 +298,60 @@
             ctx.drawImage(blastImg, endX - bSize/2, finalY - bSize/2, bSize, bSize);
         }
     }
-
-    async function handleAction(id) {
-        const btn = document.getElementById('btn-' + id);
-        const amtLabel = document.getElementById('amt-' + id);
-        
-        // ১. বেট ধরার অংশ (যদি আগে থেকে বেট না থাকে)
-        if (!isBetting) {
-            currentBetAmount = parseInt(amtLabel.innerText);
-            try {
-                const res = await fetch('/api/place-bet', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ amount: currentBetAmount })
-                });
-                const data = await res.json();
-                
-                if (data.success) {
-                    isBetting = true;
-                    btn.innerText = "CASH OUT";
-                    btn.classList.add('cashout');
-                    if(document.getElementById('s-click')) document.getElementById('s-click').play();
-                } else {
-                    alert(data.message);
-                }
-            } catch(e) { console.log("Bet Error"); }
-
-        } else {
-            // ২. ক্যাশআউট করার অংশ (ল্যাগ এড়াতে targetMultiplier ব্যবহার)
-            try {
-                const res = await fetch('/api/cashout', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        betAmount: currentBetAmount, 
-                        multiplier: targetMultiplier 
-                    })
-                });
-
-
+async function handleAction(id) {
+    playSound('s-click');
+    let btn = document.getElementById('btn-' + id);
     
-                   const data = await res.json();
-                
-                if (data.success) {
-                    alert("অভিনন্দন! আপনি জিতেছেন: " + data.win + " BDT");
-                    
-                    // বাটন রিসেট লজিক
-                    isBetting = false;
-                    btn.innerText = "BET";
-                    btn.classList.remove('cashout');
-                    
-                    // ক্যাশআউট ক্লিক সাউন্ড
-                    if(document.getElementById('s-click')) document.getElementById('s-click').play();
-                } else {
-                    alert(data.message);
-                }
-            } catch(e) { 
-                console.log("Cashout Error"); 
-            }
+    // ১. বেট ধরার চেষ্টা করলে
+    if (!isBetting) {
+        // চেক: হেলিকপ্টার কি উড়ছে? (১.০০x এর বেশি হলে বেট ব্লক)
+        if (targetMultiplier > 1.00) {
+            alert("দুঃখিত! রাউন্ড শুরু হয়ে গেছে। পরবর্তী রাউন্ডের জন্য অপেক্ষা করুন।");
+            return; // এখানেই কোড থেমে যাবে
+        }
+
+        currentBetAmount = parseInt(document.getElementById('amt-' + id).innerText);
+        const res = await fetch('/api/place-bet', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ amount: currentBetAmount })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            isBetting = true;
+            btn.innerText = "CASH OUT";
+            btn.classList.add('cashout');
+        } else {
+            alert(data.message);
+        }
+    } 
+    // ২. ক্যাশআউট করার লজিক
+    else {
+        // চেক: যদি হেলিকপ্টার ক্রাশ হয়ে যায় তবে ক্যাশআউট হবে না
+        if (isCrashed) return;
+
+        const res = await fetch('/api/cashout', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                betAmount: currentBetAmount, 
+                multiplier: targetMultiplier 
+            })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            alert("অভিনন্দন! আপনি জিতেছেন: " + data.win + " BDT");
+            resetBetButton(id);
+        } else {
+            alert("দুঃখিত! আপনি অনেক দেরি করে ফেলেছেন।");
+            resetBetButton(id);
         }
     }
+}
+
+    
 
     // ৫. সাপোর্টিং ফাংশনস (রিসেট, টগল, অ্যামাউন্ট)
     function toggleTab(p, type) {
