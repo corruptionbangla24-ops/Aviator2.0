@@ -73,8 +73,13 @@ app.post('/api/place-bet', async (req, res) => {
 app.post('/api/cashout', async (req, res) => {
     const { betAmount, multiplier } = req.body;
     try {
-        const [game] = await pool.execute('SELECT current_multiplier, is_crashed FROM aviator_game_state WHERE id = 1');
-        if (!game[0].is_crashed && multiplier <= game[0].current_multiplier) {
+        const [rows] = await pool.execute('SELECT current_multiplier, is_crashed FROM aviator_game_state WHERE id = 1');
+        const game = rows[0];
+
+        // ০.০৫x এর একটি সেফটি মার্জিন দেওয়া হয়েছে যাতে ল্যাগ থাকলেও ক্যাশআউট হয়
+        const safetyMargin = 0.05; 
+        
+        if (!game.is_crashed && (parseFloat(multiplier) <= parseFloat(game.current_multiplier) + safetyMargin)) {
             const winAmount = betAmount * multiplier;
             await pool.execute('UPDATE aviator_users SET balance = balance + ? WHERE id = 1', [winAmount]);
             res.json({ success: true, win: winAmount.toFixed(2) });
@@ -83,6 +88,7 @@ app.post('/api/cashout', async (req, res) => {
         }
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
 
 app.get('/setup-database', async (req, res) => {
     try {
