@@ -35,29 +35,31 @@ function generateCrashPoint() {
 let currentMult = 1.00;
 let crashPoint = generateCrashPoint();
 let isCrashed = false;
+    setInterval(async () => {
+        if (!isCrashed) {
+            currentMult = parseFloat(currentMult) + 0.01;
 
-setInterval(async () => {
-    if (!isCrashed) {
-        currentMult += 0.01;
-
-        // ইঞ্জিন চেক: যদি ক্রাশ পয়েন্টে পৌঁছায় তবে অটো ক্রাশ
-        if (parseFloat(currentMult) >= parseFloat(crashPoint)) {
-            isCrashed = true;
-            
-            // ডাটাবেস আপডেট
-            await conn.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = true WHERE id = 1', [currentMult]);
-            
-            // ৫ সেকেন্ড বিরতি দিয়ে নতুন রাউন্ড
-            setTimeout(() => {
-                currentMult = 1.00;
-                isCrashed = false;
-                crashPoint = generateCrashPoint(); // এখানে নতুন RTP মেনে রেজাল্ট তৈরি হবে
-            }, 5000);
-        } else {
-            await conn.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = false WHERE id = 1', [currentMult]);
+            // ১. চেক করা হচ্ছে এটি কি ক্রাশ পয়েন্টে পৌঁছেছে?
+            if (parseFloat(currentMult) >= parseFloat(crashPoint)) {
+                isCrashed = true;
+                
+                // ডাটাবেসে ক্রাশ স্ট্যাটাস সেভ
+                await conn.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = true WHERE id = 1', [currentMult.toFixed(2)]);
+                
+                // ২. ৫ সেকেন্ড বিরতি দিয়ে নতুন রাউন্ড শুরু
+                setTimeout(() => {
+                    currentMult = 1.00;
+                    isCrashed = false;
+                    crashPoint = generateCrashPoint(); // নতুন RTP মেনে রেজাল্ট
+                }, 5000);
+            } else {
+                // ৩. গেম সচল থাকলে ডাটাবেস আপডেট
+                await conn.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = false WHERE id = 1', [currentMult.toFixed(2)]);
+            }
         }
-    }
-}, 150);
+    }, 150);
+
+
 
 
 
