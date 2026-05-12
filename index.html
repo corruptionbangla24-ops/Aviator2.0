@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BETLOVER24 - Aviator</title>
+    <style>
+        :root { --bg: #000; --card: #151515; --accent: #ff0044; --green: #28a745; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: Arial, sans-serif; overflow-x: hidden; }
+        .navbar { display: flex; justify-content: space-between; padding: 10px; background: #111; align-items: center; border-bottom: 2px solid var(--accent); }
+        .logo-box b { color: #fff; font-size: 1.2rem; }
+        .logo-box span { color: var(--accent); font-weight: bold; margin-left: 5px; }
+        .balance-display { background: #222; padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #ffca28; border: 1px solid #444; }
+        
+        #game-box { height: 200px; position: relative; background: radial-gradient(circle at bottom left, #1a0005, #000); margin: 10px; border-radius: 10px; overflow: hidden; border: 1px solid #222; }
+        #multiplier { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; font-weight: 900; z-index: 10; text-shadow: 0 0 20px rgba(255,0,68,0.5); }
+        canvas { width: 100%; height: 100%; }
+
+        .history { padding: 10px; display: flex; gap: 10px; overflow-x: auto; background: #0a0a0a; font-size: 12px; }
+        .history span { background: #222; padding: 2px 8px; border-radius: 10px; }
+
+        .bet-card { background: var(--card); margin: 10px; padding: 12px; border-radius: 15px; border: 1px solid #333; }
+        .tabs { display: flex; background: #000; border-radius: 25px; padding: 3px; margin-bottom: 10px; border: 1px solid #333; }
+        .tab { flex: 1; text-align: center; padding: 8px; border-radius: 20px; cursor: pointer; font-size: 14px; }
+        .active-tab { background: var(--accent); font-weight: bold; }
+
+        .panel-layout { display: flex; gap: 10px; align-items: center; }
+        .amount-section { flex: 1; }
+        .input-box { display: flex; background: #000; border-radius: 8px; padding: 5px; align-items: center; justify-content: space-between; border: 1px solid #444; }
+        .input-box button { background: none; border: none; color: var(--accent); font-size: 24px; font-weight: bold; width: 35px; }
+        .grid-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px; }
+        .q-btn { background: #222; border: 1px solid #444; color: #ccc; padding: 5px; border-radius: 5px; font-size: 12px; }
+
+        .main-btn { width: 100px; height: 75px; background: var(--green); border: none; border-radius: 12px; color: #fff; font-weight: 900; font-size: 18px; box-shadow: 0 5px 0 #1e7e34; }
+        .cashout { background: #ff9800; box-shadow: 0 5px 0 #e68a00; }
+
+        .auto-settings { display: grid; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #333; }
+        .auto-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+        .toggle { width: 40px; height: 20px; background: #333; border-radius: 10px; position: relative; border: 1px solid #444; }
+        .toggle::after { content: ''; width: 16px; height: 16px; background: #fff; border-radius: 50%; position: absolute; top: 1px; left: 2px; transition: 0.3s; }
+        .toggle.on { background: var(--green); }
+        .toggle.on::after { left: 21px; }
+        .val-box { background: #000; padding: 3px 10px; border-radius: 5px; border: 1px solid var(--accent); color: var(--accent); font-weight: bold; }
+
+        .live-bets { margin: 10px; background: var(--card); border-radius: 10px; padding: 10px; }
+        .bet-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .bet-table th { text-align: left; color: #777; padding-bottom: 10px; }
+        .bet-table td { padding: 8px 0; border-bottom: 1px solid #222; }
+        .win-txt { color: var(--green); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<audio id="s-click" src="click.mp3"></audio>
+<audio id="s-fly" src="helicopter.mp3" loop></audio>
+<audio id="s-crash" src="crash.mp3"></audio>
+
+<nav class="navbar">
+    <div class="logo-box"><b>BETLOVER24</b><span>Aviator</span></div>
+    <div class="balance-display">0.00 BDT</div>
+</nav>
+
+<div class="history">
+    <span>1.20x</span> <span style="color:var(--accent)">5.40x</span> <span>2.11x</span> <span>1.05x</span>
+</div>
+
+<div id="game-box">
+    <div id="multiplier">1.00x</div>
+    <canvas id="canvas" width="400" height="200"></canvas>
+</div>
+
+<!-- প্যানেল ১ -->
+<div class="bet-card" id="p1">
+    <div class="tabs">
+        <div class="tab active-tab" onclick="toggleTab(1, 'bet')">Bet</div>
+        <div class="tab" onclick="toggleTab(1, 'auto')">Auto</div>
+    </div>
+    <div class="panel-layout">
+        <div class="amount-section">
+            <div class="input-box"><button onclick="changeAmt(1, -5)">-</button><b id="amt-1">10</b><button onclick="changeAmt(1, 5)">+</button></div>
+            <div class="grid-btns"><button class="q-btn" onclick="setAmt(1, 50)">50</button><button class="q-btn" onclick="setAmt(1, 100)">100</button></div>
+        </div>
+        <button class="main-btn" id="btn-1" onclick="handleAction(1)">BET</button>
+    </div>
+    <div id="auto-1" class="auto-settings" style="display: none;">
+        <div class="auto-row">Auto Bet <div class="toggle" onclick="toggleAuto(1, 'bet')"></div></div>
+        <div class="auto-row">Auto Cashout <div style="display:flex; align-items:center; gap:5px;"><div class="toggle" onclick="toggleAuto(1, 'cashout')"></div><div class="val-box" id="auto-val-1" onclick="setAutoValue(1)">2.00x</div></div></div>
+    </div>
+</div>
+
+<div class="live-bets">
+    <table class="bet-table">
+        <thead><tr><th>PLAYER</th><th>BET</th><th>WIN</th></tr></thead>
+        <tbody id="bet-history"></tbody>
+    </table>
+</div>
+
+<script>
+    const mText = document.getElementById('multiplier'), balanceDisplay = document.querySelector('.balance-display');
+    const canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
+    const planeImg = new Image(); planeImg.src = 'helicopter.png';
+    const blastImg = new Image(); blastImg.src = 'explosion.png';
+
+    let targetMultiplier = 1.00, displayMultiplier = 1.00, isCrashed = false, hoverStep = 0, rotorAngle = 0;
+    let isBetting = false, currentBetAmount = 0, isAutoBet1 = false, isAutoCashout1 = false, autoCashoutValue1 = 2.00;
+
+    async function updateGame() {
+        try {
+            const res = await fetch('/api/game-data');
+            const data = await res.json();
+            targetMultiplier = parseFloat(data.multiplier);
+            isCrashed = (data.is_crashed == 1);
+            if (balanceDisplay) balanceDisplay.innerText = parseFloat(data.balance).toFixed(2) + " BDT";
+            
+            if (isCrashed) {
+                if (isBetting) resetUI();
+                stopFlySound();
+            } else if (targetMultiplier > 1.05) playFlySound();
+        } catch (e) {}
+    }
+
+    function smoothAnimate() {
+        if (!isCrashed) {
+            if (displayMultiplier < targetMultiplier) displayMultiplier += 0.01;
+            mText.innerText = displayMultiplier.toFixed(2) + "x";
+            mText.style.color = "white";
+            drawCurve(displayMultiplier, false);
+            updateLiveBets(displayMultiplier, false);
+            if (isBetting && isAutoCashout1 && displayMultiplier >= autoCashoutValue1) handleAction(1);
+        } else {
+            displayMultiplier = targetMultiplier;
+            mText.innerText = "BURSTING!"; mText.style.color = "red";
+            drawCurve(displayMultiplier, true);
+            updateLiveBets(displayMultiplier, true);
+        }
+        requestAnimationFrame(smoothAnimate);
+    }
+
+    function drawCurve(val, crashed) {
+        ctx.clearRect(0,0,400,200);
+        let endX = Math.min((val-1)*35, 330), endY = Math.max(180-(val*10), 40);
+        hoverStep += 0.07; let wave = crashed ? 0 : Math.sin(hoverStep)*10;
+        let finalY = endY + wave;
+        ctx.beginPath(); ctx.strokeStyle = crashed ? "#444" : "#ff0044"; ctx.lineWidth = 5; ctx.lineCap = "round";
+        ctx.moveTo(0, 195); ctx.quadraticCurveTo(endX/2, 195+wave, endX, finalY); ctx.stroke();
+
+        if (!crashed && planeImg.complete) {
+            const size = 100; ctx.drawImage(planeImg, endX - size/2, finalY - size/2, size, size);
+            rotorAngle += 0.5; ctx.save(); ctx.translate(endX, finalY - size/4); ctx.rotate(rotorAngle);
+            ctx.beginPath(); ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 4; ctx.moveTo(-40,0); ctx.lineTo(40,0); ctx.stroke(); ctx.restore();
+        } else if (crashed && blastImg.complete) {
+            ctx.drawImage(blastImg, endX-50, finalY-50, 100, 100);
+        }
+    }
+
+    async function handleAction(id) {
+        playSound('s-click');
+        let btn = document.getElementById('btn-1');
+        if (!isBetting) {
+            currentBetAmount = parseInt(document.getElementById('amt-1').innerText);
+            const res = await fetch('/api/place-bet', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({amount:currentBetAmount})});
+            const data = await res.json();
+            if (data.success) { isBetting = true; btn.innerText = "CASH OUT"; btn.classList.add('cashout'); }
+        } else {
+            const res = await fetch('/api/cashout', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({betAmount:currentBetAmount, multiplier:targetMultiplier})});
+            const data = await res.json();
+            if (data.success) { alert("উইন: " + data.win + " BDT"); resetUI(); }
+        }
+    }
+
+    function resetUI() { isBetting = false; let btn = document.getElementById('btn-1'); btn.innerText = "BET"; btn.classList.remove('cashout'); }
+    function toggleTab(p, type) {
+        document.querySelectorAll(`#p${p} .tab`).forEach(t => t.classList.remove('active-tab'));
+        event.currentTarget.classList.add('active-tab');
+        document.getElementById(`auto-${p}`).style.display = (type === 'auto') ? 'grid' : 'none';
+    }
+    function toggleAuto(p, type) { event.currentTarget.classList.toggle('on'); let val = event.currentTarget.classList.contains('on'); if(type==='bet') isAutoBet1=val; else isAutoCashout1=val; }
+    function changeAmt(p, v) { let el = document.getElementById('amt-'+p); let cur = parseInt(el.innerText); if(cur+v >= 5) el.innerText = cur+v; }
+    function setAmt(p, v) { document.getElementById('amt-'+p).innerText = v; playSound('s-click'); }
+    function setAutoValue(p) { let v = prompt("Auto Cashout:", autoCashoutValue1); if(v && !isNaN(v)) { autoCashoutValue1 = parseFloat(v); document.getElementById('auto-val-'+p).innerText = autoCashoutValue1.toFixed(2)+'x'; } }
+    
+    function playSound(id) { let s = document.getElementById(id); if(s) s.play().catch(e=>{}); }
+    function playFlySound() { let s = document.getElementById('s-fly'); if(s && s.paused) s.play().catch(e=>{}); }
+    function stopFlySound() { let s = document.getElementById('s-fly'); if(s) { s.pause(); s.currentTime=0; playSound('s-crash'); } }
+
+    function updateLiveBets(val, crashed) {
+        const table = document.getElementById('bet-history'); if(!table) return;
+        if (val <= 1.05) table.innerHTML = '';
+        if (table.children.length < 5) {
+            ["Aviator_Pro", "Winner_99", "Sky_King", "Lucky_User", "Bet_Master"].forEach((n, i) => {
+                table.innerHTML += `<tr><td>${n}_${Math.floor(Math.random()*99)}</td><td>${(Math.random()*500+10).toFixed(2)}</td><td id="w-${i}">-</td></tr>`;
+            });
+        }
+        if (!crashed) {
+            for (let i=0; i<5; i++) {
+                let cell = document.getElementById(`w-${i}`);
+                if (cell && cell.innerText === "-" && Math.random() < 0.01) {
+                    let bet = parseFloat(cell.previousElementSibling.innerText);
+                    cell.innerText = (bet * val).toFixed(2); cell.classList.add('win-txt');
+                }
+            }
+        }
+    }
+
+    setInterval(updateGame, 500); smoothAnimate();
+</script>
+</body>
+</html>
