@@ -332,6 +332,30 @@
             if (data.history) {
                 renderHistory(data.history);
             }
+        if (data.players) {
+            const playerTableBody = document.getElementById('player-list');
+            if (playerTableBody) {
+                playerTableBody.innerHTML = '';
+                data.players.forEach(player => {
+                    const row = document.createElement('tr');
+                    if (player.isCashedOut) {
+                        row.style.background = "rgba(40, 167, 69, 0.15)";
+                        row.innerHTML = `
+                            <td style="color: #aaa;">${player.username}</td>
+                            <td>${player.betAmount}</td>
+                            <td style="color: #28a745; font-weight: bold;">${player.winAmount} BDT (${player.targetMultiplier.toFixed(2)}x)</td>
+                        `;
+                    } else {
+                        row.innerHTML = `
+                            <td style="color: #aaa;">${player.username}</td>
+                            <td>${player.betAmount}</td>
+                            <td style="color: #777;">-</td>
+                        `;
+                    }
+                    playerTableBody.appendChild(row);
+                });
+            }
+        }
 
             if (data.is_crashed == 1) {
                 isCrashed = true;
