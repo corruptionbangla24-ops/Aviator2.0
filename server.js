@@ -1,104 +1,119 @@
 const express = require('express');
-const mysql = require('mysql2/promise');
+const http = require('http');
+const { Server } = require("socket.io");
+const path = require('path');
+
 const app = express();
+const server = http.createServer(app);
 
-app.use(express.static('./'));
+// সকেট ডট আইও (Socket.io) সেটআপ এবং ক্রস-অরিজিন পলিসি অনুমোদন
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public'))); // আপনার ফ্রন্টএন্ড ফাইলগুলোর ফোল্ডার নাম যদি public হয়
 
-const dbConfig = {
-    host: 'mysql-8138310-corruptionbangla24-843b.l.aivencloud.com',
-    user: 'avnadmin',
-    password: 'AVNS_PsYa4FE9fJvITOf4u0Z',
-    database: 'defaultdb',
-    port: 15225,
-    ssl: { rejectUnauthorized: false }
-};
-
-// ১. RTP 90% লজিক
-function generateCrashPoint() {
-    const r = Math.random();
-    if (r < 0.10) return 1.00; // ১০% ইনস্ট্যান্ট ক্রাশ
-    let outcome = 0.90 / (1 - r); 
-    return Math.min(Math.max(1.01, outcome), 30.00).toFixed(2);
-}
-
-let currentMult = 1.00;
-let crashPoint = generateCrashPoint();
+// গেমের রিয়েল-টাইম ভেরিয়েবল সমূহ
+let currentMultiplier = 1.00;
 let isCrashed = false;
+let gameInterval = null;
+let userBalance = 5000.00; // টেস্ট ব্যালেন্স (আপনার ডাটাবেস অনুযায়ী পরিবর্তন করে নিতে পারেন)
 
-// গ্লোবাল পুল তৈরি
-const pool = mysql.createPool(dbConfig);
-
-async function startEngine() {
-    setInterval(async () => {
+// নতুন রাউন্ড শুরু করার ফাংশন
+function startNewRound() {
+    currentMultiplier = 1.00;
+    isCrashed = false;
+    
+    // প্রতি ৫০ মিলিসেকেন্ডে (১ সেকেন্ডে ২০ বার) ডাটা আপডেট হবে, যা গেমকে করবে সুপার ফাস্ট
+    gameInterval = setInterval(() => {
         if (!isCrashed) {
-            currentMult = parseFloat(currentMult) + 0.01;
-            if (parseFloat(currentMult) >= parseFloat(crashPoint)) {
-                isCrashed = true;
-                await pool.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = true WHERE id = 1', [currentMult.toFixed(2)]);
-                setTimeout(() => {
-                    currentMult = 1.00;
-                    isCrashed = false;
-                    crashPoint = generateCrashPoint();
-                }, 5000);
+            // মাল্টিপ্লায়ার বৃদ্ধির গতি (১.০০x থেকে আস্তে আস্তে স্পিড বাড়বে)
+            if (currentMultiplier < 2.00) {
+                currentMultiplier += 0.01;
+            } else if (currentMultiplier < 10.00) {
+                currentMultiplier += 0.05;
             } else {
-                await pool.execute('UPDATE aviator_game_state SET current_multiplier = ?, is_crashed = false WHERE id = 1', [currentMult.toFixed(2)]);
+                currentMultiplier += 0.20;
+            }
+
+            // সকেটের মাধ্যমে সব কানেক্টেড প্লেয়ারের ফোনে লাইভ ডাটা পাঠানো
+            io.emit("gameUpdate", {
+                multiplier: currentMultiplier.toFixed(2),
+                is_crashed: 0,
+                balance: userBalance
+            });
+
+            // টেস্ট লজিক: র‍্যান্ডমলি ৫০x এর ভেতর ক্রাশ ঘটানো (আপনার আসল লজিক এখানে বসবে)
+            if (currentMultiplier >= (Math.random() * 15 + 1.5)) {
+                triggerCrash();
             }
         }
-    }, 150);
+    }, 50);
 }
-startEngine();
 
-app.get('/api/game-data', async (req, res) => {
-    try {
-        const [gameRows] = await pool.execute('SELECT current_multiplier, is_crashed FROM aviator_game_state WHERE id = 1');
-        const [userRows] = await pool.execute('SELECT balance FROM aviator_users WHERE id = 1');
-        res.json({ multiplier: gameRows[0].current_multiplier, is_crashed: gameRows[0].is_crashed, balance: userRows[0].balance });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
+// ক্রাশ ঘটানোর বা গেম ওভার করার ফাংশন
+function triggerCrash() {
+    clearInterval(gameInterval);
+    isCrashed = true;
+    
+    // ক্রাশ সিগন্যাল পাঠানো
+    io.emit("gameUpdate", {
+        multiplier: currentMultiplier.toFixed(2),
+        is_crashed: 1,
+        trigger_sound: true
+    });
 
-app.post('/api/place-bet', async (req, res) => {
+    // ৫ সেকেন্ড পর আবার স্বয়ংক্রিয়ভাবে নতুন রাউন্ড শুরু হবে
+    setTimeout(() => {
+        startNewRound();
+    }, 5000);
+}
+
+// API রাউট সমূহ (বেট ধরা এবং ক্যাশআউটের জন্য)
+app.post('/api/place-bet', (req, res) => {
     const { amount } = req.body;
-    try {
-        const [user] = await pool.execute('SELECT balance FROM aviator_users WHERE id = 1');
-        if (user[0].balance >= amount) {
-            await pool.execute('UPDATE aviator_users SET balance = balance - ? WHERE id = 1', [amount]);
-            res.json({ success: true });
-        } else {
-            res.status(400).json({ success: false, message: "Insufficient Balance!" });
-        }
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    if (userBalance >= amount) {
+        userBalance -= amount;
+        res.json({ success: true, balance: userBalance });
+    } else {
+        res.json({ success: false, message: "Insufficient Balance!" });
+    }
 });
 
-app.post('/api/cashout', async (req, res) => {
-    const { betAmount, multiplier } = req.body;
-    try {
-        const [rows] = await pool.execute('SELECT current_multiplier, is_crashed FROM aviator_game_state WHERE id = 1');
-        const game = rows[0];
-
-        // ০.০৫x এর একটি সেফটি মার্জিন দেওয়া হয়েছে যাতে ল্যাগ থাকলেও ক্যাশআউট হয়
-        const safetyMargin = 0.05; 
-        
-        if (!game.is_crashed && (parseFloat(multiplier) <= parseFloat(game.current_multiplier) + safetyMargin)) {
-            const winAmount = betAmount * multiplier;
-            await pool.execute('UPDATE aviator_users SET balance = balance + ? WHERE id = 1', [winAmount]);
-            res.json({ success: true, win: winAmount.toFixed(2) });
-        } else {
-            res.status(400).json({ success: false, message: "Too late!" });
-        }
-    } catch (err) { res.status(500).json({ error: err.message }); }
+app.post('/api/cash-out', (req, res) => {
+    if (!isCrashed) {
+        let winAmount = req.body.amount * currentMultiplier;
+        userBalance += winAmount;
+        res.json({ success: true, winAmount: winAmount.toFixed(2), balance: userBalance });
+    } else {
+        res.json({ success: false, message: "Already Flown Away!" });
+    }
 });
 
-
-app.get('/setup-database', async (req, res) => {
-    try {
-        await pool.execute(`CREATE TABLE IF NOT EXISTS aviator_game_state (id INT PRIMARY KEY, current_multiplier DECIMAL(10,2), is_crashed BOOLEAN)`);
-        await pool.execute(`CREATE TABLE IF NOT EXISTS aviator_users (id INT PRIMARY KEY, balance DECIMAL(10,2))`);
-        await pool.execute('INSERT IGNORE INTO aviator_game_state VALUES (1, 1.00, false)');
-        await pool.execute('INSERT IGNORE INTO aviator_users VALUES (1, 500.00)');
-        res.send("Database Setup Success!");
-    } catch (err) { res.status(500).send(err.message); }
+// হোম পেজ রাউট
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// সকেট কানেকশন হ্যান্ডলার
+io.on("connection", (socket) => {
+    console.log("A user connected: " + socket.id);
+    
+    // নতুন ইউজার ঢুকলে তাকে বর্তমান গেমের অবস্থা জানানো
+    socket.emit("gameUpdate", {
+        multiplier: currentMultiplier.toFixed(2),
+        is_crashed: isCrashed ? 1 : 0,
+        balance: userBalance
+    });
+});
+
+// Render হোস্টিংয়ের জন্য ডাইনামিক পোর্ট সেটআপ
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Server Live on port ' + PORT));
+server.listen(PORT, () => {
+    console.log(`Aviator Engine Server is running on port ${PORT}`);
+    startNewRound(); // সার্ভার চালুর সাথে সাথে প্রথম রাউন্ড শুরু
+});
