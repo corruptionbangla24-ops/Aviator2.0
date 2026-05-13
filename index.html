@@ -254,10 +254,10 @@
         const blastImg = new Image();
         blastImg.src = 'explosion.png';
 
-        // সুপার ফাস্ট স্মুথ ট্র্যাকিং ভেরিয়েবল
-        let currentVisualVal = 1.00; // স্ক্রিনে যা দেখা যাবে
-        let targetServerVal = 1.00;  // সার্ভার থেকে যা আসছে
+        // সুপার স্মুথ প্রেডিকশন ভেরিয়েবল
+        let currentVisualVal = 1.00; 
         let isCrashed = false;
+        let lastFrameTime = performance.now();
 
         function initCanvas() {
             canvas.width = canvas.parentElement.clientWidth;
@@ -266,13 +266,11 @@
         window.addEventListener('resize', initCanvas);
         initCanvas();
 
-        // ১. সার্ভার থেকে ডাটা আনা (ব্যাকগ্রাউন্ডে চলবে, এনিমেশনকে ডিস্টার্ব করবে না)
+        // ১. সার্ভার চেক (শুধুমাত্র ক্রাশ এবং ব্যালেন্স ডাটা ব্যাকগ্রাউন্ডে চেক করবে)
         async function fetchServerData() {
             try {
                 const response = await fetch('/api/game-data');
                 const data = await response.json();
-                
-                targetServerVal = parseFloat(data.multiplier);
 
                 if (data.is_crashed == 1) {
                     isCrashed = true;
@@ -289,15 +287,20 @@
                         btn.classList.remove('cashout');
                     }
                 } else {
-                    isCrashed = false;
+                    // যদি সার্ভারে গেম নতুন করে শুরু হয় বা রিসেট হয়
+                    if (isCrashed && data.multiplier <= 1.02) {
+                        currentVisualVal = 1.00;
+                        isCrashed = false;
+                    }
+                    
                     // ইঞ্জিন ওড়ার সাউন্ড লুপ
                     const flySound = document.getElementById('s-fly');
-                    if (flySound && flySound.paused && targetServerVal > 1.02) {
+                    if (flySound && flySound.paused && currentVisualVal > 1.02) {
                         flySound.play().catch(()=>{});
                     }
 
                     // ফ্রন্টএন্ড অটো ক্যাশআউট চ্যাকিং
-                    if (isBetting && isAutoCashout && targetServerVal >= autoCashoutValue) {
+                    if (isBetting && isAutoCashout && currentVisualVal >= autoCashoutValue) {
                         handleAction();
                     }
                 }
@@ -310,24 +313,31 @@
             }
         }
 
-        // ২. সুপার ফাস্ট ৬০ FPS রেন্ডার লুপ (ব্রাউজার স্পিড অপ্টিমাইজড)
-        function gameLoop() {
+        // ২. সুপার ফাস্ট ৬০ FPS ইনডিপেনডেন্ট গেম লুপ (নেটওয়ার্কের ওপর নির্ভর করবে না)
+        function gameLoop(currentTime) {
+            // প্রতিটি ফ্রেমের মধ্যবর্তী সময় হিসাব করা (টাইম-বেসড এনিমেশন)
+            let deltaTime = (currentTime - lastFrameTime) / 1000;
+            lastFrameTime = currentTime;
+
             if (!isCrashed) {
-                // ইন্টারপোলেশন: বর্তমান ভ্যালুটিকে সার্ভার ভ্যালুর দিকে খুব স্মুথলি টেনে নিয়ে যাবে
-                // ০.১ হলো গতি। এটি আপনার গেমের আটকে আটকে চলা ভাব ১০০% দূর করবে।
-                currentVisualVal += (targetServerVal - currentVisualVal) * 0.1;
+                // সময়ের সাথে সাথে হেলিকপ্টারের গতি স্বয়ংক্রিয়ভাবে বাড়বে (যেমন প্রতি সেকেন্ডে ০.১৫ করে)
+                // এটি গেমের আটকে আটকে চলা ভাব পুরোপুরি দূর করবে
+                if (currentVisualVal > 1.00) {
+                    currentVisualVal += deltaTime * (0.08 + (currentVisualVal * 0.05)); 
+                } else {
+                    currentVisualVal += deltaTime * 0.1;
+                }
                 
                 mText.innerText = currentVisualVal.toFixed(2) + "x";
                 mText.style.color = "white";
                 drawCurve(currentVisualVal, false);
             } else {
-                currentVisualVal = targetServerVal;
                 mText.innerText = "FLEW AWAY!";
                 mText.style.color = "red";
                 drawCurve(currentVisualVal, true);
             }
 
-            // ব্রাউজারকে সর্বোচ্চ ৬০ ফ্রেমে রিফ্রেশ করার কমান্ড
+            // ব্রাউজারকে সর্বোচ্চ ফ্রেমে রিফ্রেশ করার কমান্ড
             requestAnimationFrame(gameLoop);
         }
 
@@ -446,9 +456,10 @@
         }
 
         // গেম এবং ডাটা ফেচিং লুপ চালু করা
-        requestAnimationFrame(gameLoop); // এনিমেশন শুরু ৬০ FPS এ
-        setInterval(fetchServerData, 300); // সার্ভার থেকে ডাটা আনা (সময় কমিয়ে ৩০০ms করা হয়েছে স্পিড বাড়াতে)
-  
+        requestAnimationFrame(gameLoop); // ম্যাথমেটিকাল এনিমেশন শুরু (১০০% ল্যাগ ফ্রি)
+        setInterval(fetchServerData, 400); // সার্ভার ডাটা চেক ব্যাকগ্রাউন্ডে চলবে ৪০০ms পর পর
+                    
+        
     </script>
 </body>
 </html>
