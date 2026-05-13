@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BETLOVER24 Aviator</title>
+    <style>
+        :root {
+            --bg-color: #000;
+            --card-bg: #111;
+            --green: #28a745;
+            --yellow: #ffc107;
+            --red: #ff0044;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #000;
+            padding: 10px 15px;
+            border-bottom: 1px solid #222;
+        }
+        .navbar-brand b { color: var(--red); font-size: 20px; }
+        .navbar-brand span { font-size: 12px; color: #aaa; display: block; }
+        .balance-display {
+            background: #1e1e1e;
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: var(--green);
+            font-weight: bold;
+        }
+        .container { padding: 15px; }
+        #game-box {
+            position: relative;
+            background: #050505;
+            border-radius: 10px;
+            height: 200px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border: 1px solid #222;
+        }
+        canvas { width: 100%; height: 100%; display: block; }
+        #multiplier {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+        .bet-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            background: #222;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .active-tab { background: #333; font-weight: bold; border: 1px solid #555; }
+        .panel-layout { display: flex; gap: 15px; align-items: center; }
+        .amount-section { flex: 1; }
+        .input-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #000;
+            padding: 5px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #333;
+        }
+        .input-box button {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            width: 30px;
+            cursor: pointer;
+        }
+        .input-box b { font-size: 18px; }
+        .grid-btns { display: flex; gap: 5px; }
+        .q-btn {
+            flex: 1;
+            background: #222;
+            border: none;
+            color: #fff;
+            padding: 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .main-btn {
+            width: 120px;
+            height: 75px;
+            background: var(--green);
+            color: #fff;
+            border: none;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .main-btn.cashout { background: var(--yellow); color: #000; }
+        .auto-settings {
+            display: grid;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #222;
+        }
+        .auto-row { display: flex; justify-content: space-between; align-items: center; }
+        .toggle {
+            width: 34px;
+            height: 18px;
+            background: #444;
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: 0.3s;
+        }
+        .toggle.on { background: var(--green); }
+        .toggle.on::after { left: 18px; }
+        .val-box {
+            background: #000;
+            padding: 4px 10px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            cursor: pointer;
+        }
+        .live-bets { margin-top: 20px; background: #0a0a0a; border-radius: 10px; padding: 10px; }
+        .bet-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .bet-table th { text-align: left; color: #777; padding: 8px; border-bottom: 1px solid #222; }
+        .bet-table td { padding: 8px; border-bottom: 1px solid #111; }
+    </style>
+</head>
+<body>
+
+    <!-- ১. অডিও এলিমেন্ট সমূহ -->
+    <audio id="s-click" src="click.mp3" preload="auto"></audio>
+    <audio id="s-fly" src="helicopter.mp3" preload="auto" loop></audio>
+    <audio id="s-crash" src="crash.mp3" preload="auto"></audio>
+
+    <!-- ২. নেভিগেশন বার -->
+    <nav>
+        <div class="navbar-brand">
+            <b>BETLOVER24</b>
+            <span>Aviator</span>
+        </div>
+        <div class="balance-display" id="main-balance">0.00 BDT</div>
+    </nav>
+
+    <div class="container">
+        <!-- ৩. গেম ডিসপ্লে এরিয়া -->
+        <div id="game-box">
+            <canvas id="canvas"></canvas>
+            <div id="multiplier">1.00x</div>
+        </div>
+
+        <!-- ৪. একক বেটিং প্যানেল -->
+        <div class="bet-card" id="p1">
+            <div class="tabs">
+                <div class="tab active-tab" id="tab-bet" onclick="toggleTab('bet')">Bet</div>
+                <div class="tab" id="tab-auto" onclick="toggleTab('auto')">Auto</div>
+            </div>
+            <div class="panel-layout">
+                <div class="amount-section">
+                    <div class="input-box">
+                        <button onclick="changeAmt(-5)">-</button>
+                        <b id="amt-1">100</b>
+                        <button onclick="changeAmt(5)">+</button>
+                    </div>
+                    <div class="grid-btns">
+                        <button class="q-btn" onclick="setAmt(50)">50</button>
+                        <button class="q-btn" onclick="setAmt(100)">100</button>
+                        <button class="q-btn" onclick="setAmt(500)">500</button>
+                        <button class="q-btn" onclick="setAmt(1000)">1000</button>
+                    </div>
+                </div>
+                <button class="main-btn" id="btn-1" onclick="handleAction()">BET</button>
+            </div>
+            
+            <!-- অটোমেটিক অপশন সেকশন -->
+            <div id="auto-settings-panel" class="auto-settings" style="display: none;">
+                <div class="auto-row">
+                    <span>Auto Bet</span>
+                    <div class="toggle" id="toggle-autobet" onclick="toggleAuto('bet')"></div>
+                </div>
+                <div class="auto-row">
+                    <span>Auto Cashout</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="toggle" id="toggle-autocash" onclick="toggleAuto('cashout')"></div>
+                        <div class="val-box" id="auto-val-1" onclick="setAutoValue()">2.00x</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ৫. লাইভ বেট টেবিল -->
+        <div class="live-bets">
+            <table class="bet-table">
+                <thead>
+                    <tr><th>PLAYER</th><th>BET BDT</th><th>WIN BDT</th></tr>
+                </thead>
+                <tbody id="player-list">
+                    <tr><td>User_421</td><td>100.00</td><td>-</td></tr>
+                    <tr><td>Aviator_Pro</td><td>500.00</td><td>1250.00</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ৬. নিখুঁত জাভাস্ক্রিপ্ট কোড লজিক -->
+    <script>
+        let isBetting = false;
+        let isAutoBet = false;
+        let isAutoCashout = false;
+        let autoCashoutValue = 2.00;
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const mText = document.getElementById('multiplier');
+        const balanceDisplay = document.getElementById('main-balance');
+
+        // এনিমেশন ইমেজেস (৮০ সাইজ ও ব্লাস্ট ট্র্যাকিং)
+        const planeImg = new Image();
+        planeImg.src = 'helicopter.png';
+        const blastImg = new Image();
+        blastImg.src = 'explosion.png';
+
+        // ক্যানভাস সাইজ ইনিশিয়ালাইজেশন
+        function initCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
+
+        // রিয়েল-টাইম ডাটা ফেচিং এবং সাউন্ড কন্ট্রোল
+        async function updateGame() {
+            try {
+                const response = await fetch('/api/game-data');
+                const data = await response.json();
+                let val = parseFloat(data.multiplier);
+
+                if (data.is_crashed == 1) {
+                    mText.innerText = "FLEW AWAY!";
+                    mText.style.color = "red";
+                    drawCurve(val, true);
+
+                    // ক্রাশ সাউন্ড লজিক
+                    const flySound = document.getElementById('s-fly');
+                    const crashSound = document.getElementById('s-crash');
+                    if (flySound) { flySound.pause(); flySound.currentTime = 0; }
+                    if (crashSound && data.trigger_sound) crashSound.play().catch(()=>{});
+
+                    if (isBetting) {
+                        isBetting = false;
+                        const btn = document.getElementById('btn-1');
+                        btn.innerText = "BET";
+                        btn.classList.remove('cashout');
+                    }
+                } else {
+                    mText.innerText = val.toFixed(2) + "x";
+                    mText.style.color = "white";
+                    drawCurve(val, false);
+
+                    // ইঞ্জিন ওড়ার সাউন্ড লুপ
+                    const flySound = document.getElementById('s-fly');
+                    if (flySound && flySound.paused && val > 1.02) {
+                        flySound.play().catch(()=>{});
+                    }
+
+                    // ফ্রন্টএন্ড অটো ক্যাশআউট চ্যাকিং
+                    if (isBetting && isAutoCashout && val >= autoCashoutValue) {
+                        handleAction();
+                    }
+                }
+
+                if (balanceDisplay && data.balance) {
+                    balanceDisplay.innerText = parseFloat(data.balance).toFixed(2) + " BDT";
+                }
+            } catch (error) {
+                console.log("Connecting...");
+            }
+        }
+
+        // লাল কার্ভ দাগের মাথায় ৮০ পিক্সেলের পারফেক্ট হেলিকপ্টার মুভমেন্ট
+        function drawCurve(val, crashed) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.beginPath();
+            ctx.strokeStyle = crashed ? "#444" : "#ff0044";
+            ctx.lineWidth = 5;
+            ctx.lineCap = "round";
+            ctx.moveTo(0, canvas.height - 20);
+            
+            let endX = val * (canvas.width / 12);
+            let endY = (canvas.height - 20) - (val * 8);
+
+            if(endX > canvas.width - 40) endX = canvas.width - 40;
+            if(endY < 40) endY = 40;
+            
+            ctx.quadraticCurveTo(endX / 2, canvas.height - 20, endX, endY);
+            ctx.stroke();
+
+            if (!crashed && planeImg.complete) {
+                const size = 80; // আপনার চাওয়া অনুযায়ী সাইজ ৮০ নির্ধারণ করা হলো
+                ctx.drawImage(planeImg, endX - (size / 2), endY - (size / 2), size, size);
+            } else if (crashed && blastImg.complete) {
+                const bSize = 90; // বোম ব্লাস্ট সাইজ ৯০ পিক্সেল
+                ctx.drawImage(blastImg, endX - (bSize / 2), endY - (bSize / 2), bSize, bSize);
+            }
+        }
+
+        // বেট এবং ক্যাশআউট বাটন একুরেট ফাংশন
+        async function handleAction() {
+            try { document.getElementById('s-click').play(); } catch(e){}
+            const btn = document.getElementById('btn-1');
+            const amtLabel = document.getElementById('amt-1');
+            const currentBetAmount = parseInt(amtLabel.innerText);
+
+            if (!isBetting) {
+                try {
+                    const res = await fetch('/api/place-bet', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ amount: currentBetAmount })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        isBetting = true;
+                        btn.innerText = "CASH OUT";
+                        btn.classList.add('cashout');
+                    } else {
+                        alert(data.message || "Insufficient Balance!");
+                    }
+                } catch (e) { alert("Server Error!"); }
+            } else {
+                try {
+                    const res = await fetch('/api/cash-out', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        isBetting = false;
+                        btn.innerText = "BET";
+                        btn.classList.remove('cashout');
+                        alert("You Won: " + data.winAmount + " BDT");
+                    }
+                } catch (e) {}
+            }
+        }
+
+        // ইউজার ইন্টারফেস কন্ট্রোল বাটন সমূহ
+        function setAmt(val) {
+            document.getElementById('amt-1').innerText = val;
+            try { document.getElementById('s-click').play(); } catch(e){}
+        }
+
+        function changeAmt(diff) {
+            const amtLabel = document.getElementById('amt-1');
+            let current = parseInt(amtLabel.innerText);
+            current = Math.max(10, current + diff);
+            amtLabel.innerText = current;
+            try { document.getElementById('s-click').play(); } catch(e){}
+        }
+
+        function toggleTab(type) {
+            const autoPanel = document.getElementById('auto-settings-panel');
+            document.getElementById('tab-bet').classList.remove('active-tab');
+            document.getElementById('tab-auto').classList.remove('active-tab');
+
+            if (type === 'bet') {
+                document.getElementById('tab-bet').classList.add('active-tab');
+                autoPanel.style.display = 'none';
+            } else {
+                document.getElementById('tab-auto').classList.add('active-tab');
+                autoPanel.style.display = 'grid';
+            }
+        }
+
+        function toggleAuto(type) {
+            if (type === 'bet') {
+                isAutoBet = !isAutoBet;
+                document.getElementById('toggle-autobet').classList.toggle('on');
+            } else {
+                isAutoCashout = !isAutoCashout;
+                document.getElementById('toggle-autocash').classList.toggle('on');
+            }
+        }
+
+        function setAutoValue() {
+            let newValue = prompt("Enter Auto Cashout Multiplier (e.g. 2.50):", autoCashoutValue);
+            if (newValue && !isNaN(newValue) && newValue >= 1.01) {
+                autoCashoutValue = parseFloat(newValue);
+                document.getElementById('auto-val-1').innerText = autoCashoutValue.toFixed(2) + "x";
+            }
+        }
+
+        // প্রতি ৫০০ মিলিসেকেন্ড পর পর রিয়েল-টাইম ডাটা সিংক্রোনাইজেশন
+        setInterval(updateGame, 500);
+    </script>
+</body>
+</html>
