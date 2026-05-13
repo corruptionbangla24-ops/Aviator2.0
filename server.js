@@ -83,19 +83,30 @@ function startNewRound() {
                 players: livePlayersList // প্লেয়ার লিস্ট ফ্রন্টএন্ডে পুশ
             });
 
+                        // কন্ডিশন ক: যদি অ্যাডমিন নিজে কোনো পয়েন্ট ফিক্স করে দেয়
+            if (nextCrashPoint && currentMultiplier >= nextCrashPoint) {
+                console.log("Admin fixed crash point hit!");
+                nextCrashPoint = null; 
+                triggerCrash();
+                return;
+            }
+
+            // কন্ডিশন খ: RTP প্রোটেকশন চেক
             if (activeBetAmount > 0 && !hasCashedOut) {
                 let potentialPayout = activeBetAmount * currentMultiplier; 
-                let maxAllowedPayout = totalHouseIncoming * 0.90;          
+                let maxAllowedPayout = totalHouseIncoming * currentRTP; 
 
                 if (potentialPayout >= maxAllowedPayout) {
                     triggerCrash();
+                    return;
                 }
             }
 
-            if (currentMultiplier >= (Math.random() * 19 + 1.05)) {
+            // কন্ডিশন গ: স্বাভাবিক অবস্থায় র‍্যান্ডম ক্রাশ
+            if (!nextCrashPoint && currentMultiplier >= (Math.random() * 19 + 1.05)) {
                 triggerCrash();
             }
-        }
+
     }, 50);
 }
 
