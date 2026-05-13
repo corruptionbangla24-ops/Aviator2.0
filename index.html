@@ -238,7 +238,7 @@
 
     <!-- ৬. নিখুঁত জাভাস্ক্রিপ্ট কোড লজিক -->
     <script>
-              let isBetting = false;
+           let isBetting = false;
         let isAutoBet = false;
         let isAutoCashout = false;
         let autoCashoutValue = 2.00;
@@ -254,8 +254,9 @@
         const blastImg = new Image();
         blastImg.src = 'explosion.png';
 
-        // সুপার স্মুথ প্রেডিকশন ভেরিয়েবল
+        // সিঙ্ক্রোনাইজড ট্র্যাকিং ভেরিয়েবল
         let currentVisualVal = 1.00; 
+        let targetServerVal = 1.00;  // সার্ভার থেকে আসা আসল ভ্যালু
         let isCrashed = false;
         let lastFrameTime = performance.now();
 
@@ -266,11 +267,14 @@
         window.addEventListener('resize', initCanvas);
         initCanvas();
 
-        // ১. সার্ভার চেক (শুধুমাত্র ক্রাশ এবং ব্যালেন্স ডাটা ব্যাকগ্রাউন্ডে চেক করবে)
+        // ১. সার্ভার চেক (ব্যাকগ্রাউন্ডে ৪০০ms পর পর চলবে)
         async function fetchServerData() {
             try {
                 const response = await fetch('/api/game-data');
                 const data = await response.json();
+
+                // সার্ভারের আসল ভ্যালু আপডেট করা
+                targetServerVal = parseFloat(data.multiplier);
 
                 if (data.is_crashed == 1) {
                     isCrashed = true;
@@ -287,8 +291,8 @@
                         btn.classList.remove('cashout');
                     }
                 } else {
-                    // যদি সার্ভারে গেম নতুন করে শুরু হয় বা রিসেট হয়
-                    if (isCrashed && data.multiplier <= 1.02) {
+                    // গেম নতুন রাউন্ডে রিসেট হলে ভিজ্যুয়াল ভ্যালুও রিসেট হবে
+                    if (isCrashed && targetServerVal <= 1.02) {
                         currentVisualVal = 1.00;
                         isCrashed = false;
                     }
@@ -313,35 +317,42 @@
             }
         }
 
-        // ২. সুপার ফাস্ট ৬০ FPS ইনডিপেনডেন্ট গেম লুপ (নেটওয়ার্কের ওপর নির্ভর করবে না)
+        // ২. সিঙ্কড গেম লুপ (সার্ভার ভ্যালুকে ক্রস করবে না)
         function gameLoop(currentTime) {
-            // প্রতিটি ফ্রেমের মধ্যবর্তী সময় হিসাব করা (টাইম-বেসড এনিমেশন)
             let deltaTime = (currentTime - lastFrameTime) / 1000;
             lastFrameTime = currentTime;
 
             if (!isCrashed) {
-                // সময়ের সাথে সাথে হেলিকপ্টারের গতি স্বয়ংক্রিয়ভাবে বাড়বে (যেমন প্রতি সেকেন্ডে ০.১৫ করে)
-                // এটি গেমের আটকে আটকে চলা ভাব পুরোপুরি দূর করবে
-                if (currentVisualVal > 1.00) {
-                    currentVisualVal += deltaTime * (0.08 + (currentVisualVal * 0.05)); 
+                // লজিক: ভিজ্যুয়াল ভ্যালু যদি সার্ভার ভ্যালুর চেয়ে কম থাকে, তবেই সে স্মুথলি বাড়বে
+                if (currentVisualVal < targetServerVal) {
+                    // গতিকে সার্ভার ভ্যালুর সাথে ব্যালেন্স করা হয়েছে যেন জাম্প না করে
+                    let speed = 0.1 + (targetServerVal - currentVisualVal) * 2;
+                    currentVisualVal += deltaTime * speed;
+                    
+                    // কোনো কারণে ভিজ্যুয়াল ভ্যালু বেশি হয়ে গেলে সার্ভার ভ্যালুতে লক করে দেবে
+                    if (currentVisualVal > targetServerVal) {
+                        currentVisualVal = targetServerVal;
+                    }
                 } else {
-                    currentVisualVal += deltaTime * 0.1;
+                    // সার্ভার থেকে নতুন ডেটা আসার অপেক্ষায় সামান্য প্রেডিকশন
+                    currentVisualVal += deltaTime * 0.05;
                 }
                 
                 mText.innerText = currentVisualVal.toFixed(2) + "x";
                 mText.style.color = "white";
                 drawCurve(currentVisualVal, false);
             } else {
+                // ক্রাশ হলে সরাসরি সার্ভারের ক্রাশ পয়েন্ট দেখাবে
+                currentVisualVal = targetServerVal;
                 mText.innerText = "FLEW AWAY!";
                 mText.style.color = "red";
                 drawCurve(currentVisualVal, true);
             }
 
-            // ব্রাউজারকে সর্বোচ্চ ফ্রেমে রিফ্রেশ করার কমান্ড
             requestAnimationFrame(gameLoop);
         }
 
-        // ৩. লাল কার্ভ দাগের মাথায় ৮০ পিক্সেলের পারফেক্ট হেলিকপ্টার মুভমেন্ট
+        // ৩. লাল কার্ভ দাগের মাথায় হেলিকপ্টার মুভমেন্ট (স্ক্রিন রেশিও অপ্টিমাইজড)
         function drawCurve(val, crashed) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
@@ -351,10 +362,12 @@
             ctx.lineCap = "round";
             ctx.moveTo(0, canvas.height - 20);
             
-            let endX = val * (canvas.width / 12);
-            let endY = (canvas.height - 20) - (val * 8);
+            // স্ক্রিনের বাইরে যাওয়া আটকাতে মাল্টিপ্লায়ারের রেশিও কন্ট্রোল (val/15) করা হয়েছে
+            let endX = (val - 1) * (canvas.width / 15) + 30;
+            let endY = (canvas.height - 20) - ((val - 1) * 10);
 
-            if(endX > canvas.width - 40) endX = canvas.width - 40;
+            // হেলিকপ্টার যেন ক্যানভাসের একদম বর্ডার কেটে বাইরে না যায়
+            if(endX > canvas.width - 50) endX = canvas.width - 50;
             if(endY < 40) endY = 40;
             
             ctx.quadraticCurveTo(endX / 2, canvas.height - 20, endX, endY);
@@ -369,7 +382,7 @@
             }
         }
 
-        // বেট এবং ক্যাশআউট বাটন একুরেট ফাংশন
+        // বেট এবং ক্যাশআউট বাটন ফাংশন
         async function handleAction() {
             try { document.getElementById('s-click').play(); } catch(e){}
             const btn = document.getElementById('btn-1');
@@ -409,7 +422,6 @@
             }
         }
 
-        // ইউজার ইন্টারফেস কন্ট্রোল বাটন সমূহ
         function setAmt(val) {
             document.getElementById('amt-1').innerText = val;
             try { document.getElementById('s-click').play(); } catch(e){}
@@ -455,11 +467,10 @@
             }
         }
 
-        // গেম এবং ডাটা ফেচিং লুপ চালু করা
-        requestAnimationFrame(gameLoop); // ম্যাথমেটিকাল এনিমেশন শুরু (১০০% ল্যাগ ফ্রি)
-        setInterval(fetchServerData, 400); // সার্ভার ডাটা চেক ব্যাকগ্রাউন্ডে চলবে ৪০০ms পর পর
-                    
-        
+        // লুপ চালু করা (ডাটা চেকিং সময় ৩০০ms করা হয়েছে যাতে রেসপন্স ফাস্ট হয়)
+        requestAnimationFrame(gameLoop); 
+        setInterval(fetchServerData, 300);
+                               
     </script>
 </body>
 </html>
