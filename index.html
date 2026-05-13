@@ -240,7 +240,7 @@
     </div>
 
     <script>
-              let isBetting = false;
+           let isBetting = false;
         let isAutoBet = false;
         let isAutoCashout = false;
         let autoCashoutValue = 2.00;
@@ -264,7 +264,7 @@
         window.addEventListener('resize', initCanvas);
         initCanvas();
 
-        // সকেট ডট আইও লিসেনার
+        // SOCKET.IO রিয়েল-টাইম লিসেনার
         const socket = io();
 
         socket.on("gameUpdate", (data) => {
@@ -276,7 +276,7 @@
 
             if (data.is_crashed == 1) {
                 isCrashed = true;
-                mText.innerText = "BURSTING!";
+                mText.innerText = "Bursting!"; // ১ নম্বর জায়গা আপডেট করা হয়েছে
                 mText.style.color = "red";
                 
                 const flySound = document.getElementById('s-fly');
@@ -291,7 +291,6 @@
                     btn.classList.remove('cashout');
                 }
             } else {
-                // নতুন রাউন্ড শুরু হলে এবং অটোবেট অন থাকলে স্বয়ংক্রিয়ভাবে বেট ধরবে
                 if (isCrashed && currentMultiplierVal <= 1.01) {
                     isCrashed = false;
                     if (isAutoBet && !isBetting) {
@@ -307,15 +306,21 @@
                     flySound.play().catch(()=>{});
                 }
 
-                // ১০০০% একুরেট অটো ক্যাশআউট চেকার লুপ
                 if (isBetting && isAutoCashout && currentMultiplierVal >= autoCashoutValue) {
                     handleAction();
                 }
             }
         });
 
+        // ৬০ FPS ক্যানভাস এнимиশন লুপ (স্মুথ ড্রয়িং)
         function gameLoop() {
-            drawCurve(currentMultiplierVal, isCrashed);
+            if (!isCrashed) {
+                drawCurve(currentMultiplierVal, false);
+            } else {
+                mText.innerText = "Bursting!"; // ২ নম্বর (লুকানো) জায়গা আপডেট করা হয়েছে
+                mText.style.color = "red";
+                drawCurve(currentMultiplierVal, true);
+            }
             requestAnimationFrame(gameLoop);
         }
 
@@ -372,7 +377,7 @@
                     const res = await fetch('/api/cash-out', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ amount: currentBetAmount }) // এখানে অ্যামাউন্ট পাঠানো জরুরি ছিল
+                        body: JSON.stringify({ amount: currentBetAmount })
                     });
                     const data = await res.json();
                     if (data.success) {
@@ -431,8 +436,7 @@
         }
 
         requestAnimationFrame(gameLoop);
-  
-
+                     
     </script>
 </body>
 </html>
