@@ -238,7 +238,7 @@
 
     <!-- ৬. নিখুঁত জাভাস্ক্রিপ্ট কোড লজিক -->
     <script>
-        let isBetting = false;
+              let isBetting = false;
         let isAutoBet = false;
         let isAutoCashout = false;
         let autoCashoutValue = 2.00;
@@ -248,13 +248,17 @@
         const mText = document.getElementById('multiplier');
         const balanceDisplay = document.getElementById('main-balance');
 
-        // এনিমেশন ইমেজেস (৮০ সাইজ ও ব্লাস্ট ট্র্যাকিং)
+        // এনিমেশন ইমেজেস
         const planeImg = new Image();
         planeImg.src = 'helicopter.png';
         const blastImg = new Image();
         blastImg.src = 'explosion.png';
 
-        // ক্যানভাস সাইজ ইনিশিয়ালাইজেশন
+        // সুপার ফাস্ট স্মুথ ট্র্যাকিং ভেরিয়েবল
+        let currentVisualVal = 1.00; // স্ক্রিনে যা দেখা যাবে
+        let targetServerVal = 1.00;  // সার্ভার থেকে যা আসছে
+        let isCrashed = false;
+
         function initCanvas() {
             canvas.width = canvas.parentElement.clientWidth;
             canvas.height = canvas.parentElement.clientHeight;
@@ -262,18 +266,16 @@
         window.addEventListener('resize', initCanvas);
         initCanvas();
 
-        // রিয়েল-টাইম ডাটা ফেচিং এবং সাউন্ড কন্ট্রোল
-        async function updateGame() {
+        // ১. সার্ভার থেকে ডাটা আনা (ব্যাকগ্রাউন্ডে চলবে, এনিমেশনকে ডিস্টার্ব করবে না)
+        async function fetchServerData() {
             try {
                 const response = await fetch('/api/game-data');
                 const data = await response.json();
-                let val = parseFloat(data.multiplier);
+                
+                targetServerVal = parseFloat(data.multiplier);
 
                 if (data.is_crashed == 1) {
-                    mText.innerText = "FLEW AWAY!";
-                    mText.style.color = "red";
-                    drawCurve(val, true);
-
+                    isCrashed = true;
                     // ক্রাশ সাউন্ড লজিক
                     const flySound = document.getElementById('s-fly');
                     const crashSound = document.getElementById('s-crash');
@@ -287,18 +289,15 @@
                         btn.classList.remove('cashout');
                     }
                 } else {
-                    mText.innerText = val.toFixed(2) + "x";
-                    mText.style.color = "white";
-                    drawCurve(val, false);
-
+                    isCrashed = false;
                     // ইঞ্জিন ওড়ার সাউন্ড লুপ
                     const flySound = document.getElementById('s-fly');
-                    if (flySound && flySound.paused && val > 1.02) {
+                    if (flySound && flySound.paused && targetServerVal > 1.02) {
                         flySound.play().catch(()=>{});
                     }
 
                     // ফ্রন্টএন্ড অটো ক্যাশআউট চ্যাকিং
-                    if (isBetting && isAutoCashout && val >= autoCashoutValue) {
+                    if (isBetting && isAutoCashout && targetServerVal >= autoCashoutValue) {
                         handleAction();
                     }
                 }
@@ -311,7 +310,28 @@
             }
         }
 
-        // লাল কার্ভ দাগের মাথায় ৮০ পিক্সেলের পারফেক্ট হেলিকপ্টার মুভমেন্ট
+        // ২. সুপার ফাস্ট ৬০ FPS রেন্ডার লুপ (ব্রাউজার স্পিড অপ্টিমাইজড)
+        function gameLoop() {
+            if (!isCrashed) {
+                // ইন্টারপোলেশন: বর্তমান ভ্যালুটিকে সার্ভার ভ্যালুর দিকে খুব স্মুথলি টেনে নিয়ে যাবে
+                // ০.১ হলো গতি। এটি আপনার গেমের আটকে আটকে চলা ভাব ১০০% দূর করবে।
+                currentVisualVal += (targetServerVal - currentVisualVal) * 0.1;
+                
+                mText.innerText = currentVisualVal.toFixed(2) + "x";
+                mText.style.color = "white";
+                drawCurve(currentVisualVal, false);
+            } else {
+                currentVisualVal = targetServerVal;
+                mText.innerText = "FLEW AWAY!";
+                mText.style.color = "red";
+                drawCurve(currentVisualVal, true);
+            }
+
+            // ব্রাউজারকে সর্বোচ্চ ৬০ ফ্রেমে রিফ্রেশ করার কমান্ড
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ৩. লাল কার্ভ দাগের মাথায় ৮০ পিক্সেলের পারফেক্ট হেলিকপ্টার মুভমেন্ট
         function drawCurve(val, crashed) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
@@ -331,10 +351,10 @@
             ctx.stroke();
 
             if (!crashed && planeImg.complete) {
-                const size = 80; // আপনার চাওয়া অনুযায়ী সাইজ ৮০ নির্ধারণ করা হলো
+                const size = 80; 
                 ctx.drawImage(planeImg, endX - (size / 2), endY - (size / 2), size, size);
             } else if (crashed && blastImg.complete) {
-                const bSize = 90; // বোম ব্লাস্ট সাইজ ৯০ পিক্সেল
+                const bSize = 90; 
                 ctx.drawImage(blastImg, endX - (bSize / 2), endY - (bSize / 2), bSize, bSize);
             }
         }
@@ -425,8 +445,10 @@
             }
         }
 
-        // প্রতি ৫০০ মিলিসেকেন্ড পর পর রিয়েল-টাইম ডাটা সিংক্রোনাইজেশন
-        setInterval(updateGame, 500);
+        // গেম এবং ডাটা ফেচিং লুপ চালু করা
+        requestAnimationFrame(gameLoop); // এনিমেশন শুরু ৬০ FPS এ
+        setInterval(fetchServerData, 300); // সার্ভার থেকে ডাটা আনা (সময় কমিয়ে ৩০০ms করা হয়েছে স্পিড বাড়াতে)
+  
     </script>
 </body>
 </html>
