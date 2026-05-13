@@ -111,20 +111,24 @@ app.post('/api/place-bet', (req, res) => {
     }
 });
 
-// ৬. ক্যাশ আউট করার API এন্ডপয়েন্ট
 app.post('/api/cash-out', (req, res) => {
-    if (!isCrashed && activeBetAmount > 0 && !hasCashedOut) {
-        let winAmount = activeBetAmount * currentMultiplier;
+    const { amount } = req.body; // ফ্রন্টএন্ড থেকে পাঠানো বেট অ্যামাউন্ট রিড করা
+    let targetBet = amount || activeBetAmount;
+
+    if (!isCrashed && targetBet > 0 && !hasCashedOut) {
+        let winAmount = targetBet * currentMultiplier;
         
-        userBalance += winAmount;          // উইনিং টাকা প্লেয়ারের মেইন অ্যাকাউন্টে যোগ হলো
-        totalHouseIncoming -= winAmount; // প্লেয়ার জিতে যাওয়ায় হাউসের ক্যাশ থেকে টাকা মাইনাস হলো
+        userBalance += winAmount;          
+        totalHouseIncoming -= winAmount; 
         hasCashedOut = true;
+        activeBetAmount = 0; // সফলভাবে টাকা তোলার পর রিসেট
         
         res.json({ success: true, winAmount: winAmount.toFixed(2), balance: userBalance });
     } else {
         res.json({ success: false, message: "Cannot Cashout! Game Already Over." });
     }
 });
+
 
 // ৭. হোম পেজ রাউটার (মেইন ফোল্ডারের index.html লোড করবে)
 app.get('/', (req, res) => {
