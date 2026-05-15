@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(express.static(__dirname)); 
 
 // 🔗 আপনার মূল পিএইচপি সাইটের এই ফাইলটির লাইভ লিঙ্ক এখানে বসান (শেষে / দেবেন না)
-const MAIN_SITE_URL = "https://your-main-site.com"; 
+const MAIN_SITE_URL = "https://betlover247.onrender.com"; 
 
 let currentMultiplier = 1.00;
 let isCrashed = false;
