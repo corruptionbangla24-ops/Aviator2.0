@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname)); 
 
 // 🔗 আপনার মূল পিএইচপি সাইটের ডোমেইন লিঙ্ক (শেষে / দেবেন না)
-const MAIN_SITE_URL = "https://betlover247.onrender.com"; 
+const MAIN_SITE_URL = "https://onrender.com"; 
 
 // অ্যাডমিন প্যানেল ভেরিয়েবল
 const ADMIN_USERNAME = "admin";
@@ -99,23 +99,20 @@ function triggerCrash() {
     isCrashed = true;
     crashHistory.unshift(currentMultiplier.toFixed(2));
     if (crashHistory.length > 12) crashHistory.pop(); 
-            Object.keys(activeBets).forEach(async (uid) => {
-                if (activeBets[uid] && !activeBets[uid].cashedOut) {
-                    totalHouseIncoming += activeBets[uid].amount;
-                    
-                    // 📝 বিমান ক্রাশ করার সাথে সাথে মূল পিএইচপি সাইটে LOSS স্ট্যাটাস পাঠানোর এপিআই কল
-                    try {
-                        await axios.post(MAIN_SITE_URL + '/api_callback.php', {
-                            action: "loss",
-                            username: uid,
-                            amount: parseFloat(activeBets[uid].amount),
-                            game_name: "Aviator"
-                        });
-                    } catch(e) { console.log("Loss log failed"); }
-                }
-            });
 
-    
+    Object.keys(activeBets).forEach(async (uid) => {
+        if (activeBets[uid] && !activeBets[uid].cashedOut) {
+            totalHouseIncoming += activeBets[uid].amount;
+            try {
+                await axios.post(MAIN_SITE_URL + '/api_callback.php', {
+                    action: "loss",
+                    username: uid,
+                    amount: parseFloat(activeBets[uid].amount),
+                    game_name: "Aviator"
+                });
+            } catch(e) { console.log("Loss log failed"); }
+        }
+    });
 
     io.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: 1, trigger_sound: true, history: crashHistory, players: livePlayersList });
     setTimeout(() => { startNewRound(); }, 8000);
@@ -123,7 +120,7 @@ function triggerCrash() {
 
 // 🎰 ১. পিএইচপি এপিআই-এর সাথে বেট সিঙ্ক (Action: bet)
 app.post('/api/place-bet', async (req, res) => {
-    const { amount, userId, wallet } = req.body; // ফ্রন্টএন্ড থেকে ওয়ালেটের নাম ধরা হলো
+    const { amount, userId, wallet } = req.body;
 
     if (currentMultiplier > 1.02 && !isCrashed) {
         return res.json({ success: false, message: "Started" });
@@ -134,7 +131,7 @@ app.post('/api/place-bet', async (req, res) => {
             action: "bet",
             username: userId, 
             amount: parseFloat(amount),
-            wallet: wallet || "main", // <--- পিএইচপিতে এক্টিভ ওয়ালেটের নাম পাস করা হলো
+            wallet: wallet || "main",
             game_name: "Aviator"
         });
 
@@ -149,37 +146,27 @@ app.post('/api/place-bet', async (req, res) => {
     }
 });
 
-
-// এই লাইনটি যোগ করুন। এটি আপনার Termux স্ক্রিনে পিএইচপির আসল উত্তরটি প্রিন্ট করবে
-console.log("PHP Response Data:", response.data); 
- 
-
-        
-
 // 💰 ২. পিএইচপি এপিআই-এর সাথে ক্যাশআউট সিঙ্ক (Action: win)
 app.post('/api/cash-out', async (req, res) => {
-    const { userId, amount } = req.body; // ফ্রন্টএন্ড থেকে পাঠানো বাজি ধরার অ্যামাউন্ট
+    const { userId, amount, wallet } = req.body;
     let targetBet = amount || (activeBets[userId] ? activeBets[userId].amount : 0);
 
     if (!isCrashed && targetBet > 0 && activeBets[userId] && !activeBets[userId].cashedOut) {
         let winAmount = targetBet * currentMultiplier;
         try {
-            // পিএইচপি সাইটে উইন সিগন্যাল পাঠানোর সাথে বাজি ধরার আসল পরিমাণটিও (bet_amount) পাঠানো হচ্ছে
             const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', {
                 action: "win",
                 username: userId,
                 amount: parseFloat(winAmount.toFixed(2)),
-                bet_amount: parseFloat(targetBet), // নির্দিষ্ট বাজিকে ডাটাবেজে ট্র্যাক করার জন্য
+                bet_amount: parseFloat(targetBet),
+                wallet: wallet || "main",
                 game_name: "Aviator"
             });
 
             if (response.data && response.data.status === "ok") {
                 activeBets[userId].cashedOut = true;
                 totalHouseIncoming -= winAmount;
-                
-                let returnBalance = response.data.balance || (userBalance + winAmount);
-                userBalance = parseFloat(returnBalance);
-                res.json({ success: true, winAmount: winAmount.toFixed(2), balance: userBalance });
+                res.json({ success: true, winAmount: winAmount.toFixed(2), balance: response.data.balance });
             } else {
                 res.json({ success: false, message: "Cashout Declined by Server!" });
             }
@@ -190,7 +177,6 @@ app.post('/api/cash-out', async (req, res) => {
         res.json({ success: false, message: "Game Over or Invalid Cashout!" });
     }
 });
-
 
 // সিক্রেট অ্যাডমিন ড্যাশবোর্ড
 app.get('/secret-admin', (req, res) => {
@@ -218,11 +204,6 @@ app.get('/secret-admin', (req, res) => {
                     <input type="number" step="0.01" name="rtp" placeholder="Set RTP (e.g. 0.85 for 85%)"><br>
                     <button type="submit">Execute Commands 🚀</button>
                 </form>
-                <div style="margin-top: 15px; font-size: 14px; color: #aaa;">
-                    <p>💰 হাউসের ফান্ড: \${totalHouseIncoming.toFixed(2)} BDT</p>
-                    <p>📈 সেট করা ক্রাশ পয়েন্ট: \${nextCrashPoint ? nextCrashPoint + 'x' : 'None (Random/RTP)'}</p>
-                    <p>📊 বর্তমান RTP প্রোটেকশন: \${(currentRTP * 100)}%</p>
-                </div>
             </div>
         </body>
         </html>
