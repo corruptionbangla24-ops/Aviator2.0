@@ -101,7 +101,6 @@ function triggerCrash() {
 app.post('/api/place-bet', async (req, res) => {
     const { amount, userId } = req.body; 
     try {
-        // প্লাস (+) ব্যবহার করা হয়েছে যাতে মোবাইলের ব্যাকটিক চিহ্নের কোনো ভুল না হয়
         const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', {
             action: "bet",
             username: userId, 
@@ -109,23 +108,27 @@ app.post('/api/place-bet', async (req, res) => {
             game_name: "Aviator"
         });
 
-        // পিএইচপি থেকে রেসপন্স চেক করা
+        // যদি পিএইচপি থেকে কোনো অবজেক্ট না এসে এইচটিএমএল এরর পেজ আসে
+        if (typeof response.data === 'string') {
+            return res.json({ success: false, message: "PHP Server Error (HTML returned)! Check game_logs table." });
+        }
+
         if (response.data && response.data.status === "ok") {
             activeBets[userId] = { amount: parseFloat(amount), cashedOut: false };
-            
-            // পিএইচপি ব্যালেন্স না পাঠালে কারেন্ট ব্যালেন্স রিটার্ন করবে
             let returnBalance = response.data.balance || (userBalance - amount);
             userBalance = parseFloat(returnBalance); 
-
             res.json({ success: true, balance: userBalance });
         } else {
-            // পিএইচপি থেকে আসা আসল এরর মেসেজ দেখাবে (যেমন: Insufficient Balance)
-            res.json({ success: false, message: response.data.message || "Bet Declined!" });
+            // পিএইচপি থেকে পাঠানো আসল মেসেজটি স্ক্রিনে দেখাবে
+            res.json({ success: false, message: response.data.message || "Bet Rejected by PHP!" });
         }
     } catch (e) {
-        res.json({ success: false, message: "PHP Wallet Timeout!" });
+        // যদি কানেকশন বা নেটওয়ার্ক ফেল করে
+        let errMsg = e.response ? "Status " + e.response.status : e.message;
+        res.json({ success: false, message: "Server Connection Error: " + errMsg });
     }
 });
+
 
 // 💰 ২. পিএইচপি এপিআই-এর সাথে ক্যাশআউট সিঙ্ক (Action: win)
 app.post('/api/cash-out', async (req, res) => {
