@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname)); 
 
 // 🔗 আপনার মূল পিএইচপি সাইটের ডোমেইন লিঙ্ক (শেষে / দেবেন না)
-const MAIN_SITE_URL = "https://onrender.com"; 
+const MAIN_SITE_URL = "https://betlover247.onrender.com"; 
 
 // অ্যাডমিন প্যানেল ভেরিয়েবল
 const ADMIN_USERNAME = "admin";
