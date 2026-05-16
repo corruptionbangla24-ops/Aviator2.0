@@ -121,14 +121,11 @@ function triggerCrash() {
 // 🎰 ১. পিএইচপি এপিআই-এর সাথে বেট সিঙ্ক (Action: bet)
 app.post('/api/place-bet', async (req, res) => {
     const { amount, userId, wallet } = req.body;
-// 🛡️ সিকিউরিটি লক সংশোধন: প্লেন ১.০২x এর ওপরে ওড়া শুরু করলেই কেবল বেট লক হবে
-if (currentMultiplier <= 1.02 || isCrashed) {
-    // এই কন্ডিশনটি নিশ্চিত করবে যে টাইমার চলাকালীন বাজি ধরা যাবে, কিন্তু ওড়া শুরু হলে ব্লক হবে
-} else {
-    return res.json({ success: false, message: "Started" });
-}
 
-    
+    // 🛡️ পারফেক্ট সিকিউরিটি লক: বিমান ওড়া শুরু করলে (১.০২x এর ওপরে গেলে এবং ক্রাশ না হলে) বেট লক হবে
+    if (currentMultiplier > 1.02 && !isCrashed) {
+        return res.json({ success: false, message: "Started" });
+    }
 
     try {
         const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', {
@@ -149,6 +146,7 @@ if (currentMultiplier <= 1.02 || isCrashed) {
         res.json({ success: false, message: "PHP Wallet Timeout!" });
     }
 });
+
 
 // 💰 ২. পিএইচপি এপিআই-এর সাথে ক্যাশআউট সিঙ্ক (Action: win)
 app.post('/api/cash-out', async (req, res) => {
