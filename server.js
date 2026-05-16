@@ -132,7 +132,7 @@ app.post('/api/place-bet', async (req, res) => {
     action: "bet",
     username: userId, 
     amount: parseFloat(amount),
-    game_name: "Casino"
+    game_name: "Aviator"
 });
 
 // এই লাইনটি যোগ করুন। এটি আপনার Termux স্ক্রিনে পিএইচপির আসল উত্তরটি প্রিন্ট করবে
