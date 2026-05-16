@@ -473,45 +473,58 @@
             const amtLabel = document.getElementById('amt-1');
             const currentBetAmount = parseInt(amtLabel.innerText);
 
-            if (!isBetting) {
-                try {
-                                       const res = await fetch('/api/place-bet', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            amount: currentBetAmount,
-                            userId: new URLSearchParams(window.location.search).get('userId') || "Roky123"
-                        })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        isBetting = true;
-                        btn.innerText = "CASH OUT";
-                        btn.classList.add('cashout');
-                    } else {
-                        if(!isAutoBet) alert(data.message || "Insufficient Balance!");
-                    }
-                } catch (e) { console.error("Server Error!"); }
-            } else {
-                try {
-                    const res = await fetch('/api/cash-out', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            amount: currentBetAmount,
-                            userId: new URLSearchParams(window.location.search).get('userId') || "Roky123"
-                        })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        isBetting = false;
-                        btn.innerText = "BET";
-                        btn.classList.remove('cashout');
-                        alert("You Won: " + data.winAmount + " BDT");
-                    }
- 
-                } catch (e) { console.error(e); }
+                   if (btn.innerText === "BET" && window.isProcessingBet) return;
+        window.isProcessingBet = true;
+
+        if (!isBetting) {
+            try {
+                const res = await fetch('/api/place-bet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: currentBetAmount,
+                        userId: new URLSearchParams(window.location.search).get('userId') || "Roky123"
+                    })
+                });
+                const data = await res.json();
+                window.isProcessingBet = false;
+                
+                if (data.success) {
+                    isBetting = true;
+                    btn.innerText = "CASH OUT";
+                    btn.classList.add('cashout');
+                } else {
+                    if(!isAutoBet) alert(data.message || "Insufficient Balance!");
+                }
+            } catch (e) { 
+                window.isProcessingBet = false;
+                console.error("Server Error!"); 
             }
+        } else {
+            try {
+                const res = await fetch('/api/cash-out', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: currentBetAmount,
+                        userId: new URLSearchParams(window.location.search).get('userId') || "Roky123"
+                    })
+                });
+                const data = await res.json();
+                window.isProcessingBet = false;
+                
+                if (data.success) {
+                    isBetting = false;
+                    btn.innerText = "BET";
+                    btn.classList.remove('cashout');
+                    alert("You Won: " + data.winAmount + " BDT");
+                }
+            } catch (e) { 
+                window.isProcessingBet = false;
+                console.error(e); 
+            }
+        }
+ 
         }
 
         function setAmt(val) {
