@@ -443,10 +443,13 @@
 
             if (!isBetting) {
                 try {
-                    const res = await fetch('/api/place-bet', {
+                                       const res = await fetch('/api/place-bet', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ amount: currentBetAmount })
+                        body: JSON.stringify({ 
+                            amount: currentBetAmount,
+                            userId: new URLSearchParams(window.location.search).get('userId') || "Roky123"
+                        })
                     });
                     const data = await res.json();
                     if (data.success) {
@@ -462,7 +465,10 @@
                     const res = await fetch('/api/cash-out', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ amount: currentBetAmount })
+                        body: JSON.stringify({ 
+                            amount: currentBetAmount,
+                            userId: new URLSearchParams(window.location.search).get('userId') || "Roky123"
+                        })
                     });
                     const data = await res.json();
                     if (data.success) {
@@ -471,6 +477,7 @@
                         btn.classList.remove('cashout');
                         alert("You Won: " + data.winAmount + " BDT");
                     }
+ 
                 } catch (e) { console.error(e); }
             }
         }
