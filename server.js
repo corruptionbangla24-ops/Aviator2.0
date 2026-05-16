@@ -118,7 +118,7 @@ function triggerCrash() {
     
 
     io.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: 1, trigger_sound: true, history: crashHistory, players: livePlayersList });
-    setTimeout(() => { startNewRound(); }, 5000);
+    setTimeout(() => { startNewRound(); }, 8000);
 }
 
 // 🎰 ১. পিএইচপি এপিআই-এর সাথে বেট সিঙ্ক (Action: bet)
