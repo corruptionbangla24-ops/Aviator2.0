@@ -114,12 +114,16 @@ function triggerCrash() {
 app.post('/api/place-bet', async (req, res) => {
     const { amount, userId } = req.body; 
     try {
-        const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', {
-            action: "bet",
-            username: userId, 
-            amount: parseFloat(amount), // পিএইচপির ১৬ নম্বর লাইনের সাথে মেলানো হলো
-            game_name: "Casino"
-        });
+       const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', {
+    action: "bet",
+    username: userId, 
+    amount: parseFloat(amount),
+    game_name: "Casino"
+});
+
+// এই লাইনটি যোগ করুন। এটি আপনার Termux স্ক্রিনে পিএইচপির আসল উত্তরটি প্রিন্ট করবে
+console.log("PHP Response Data:", response.data); 
+ 
 
         if (response.data && response.data.status === "ok") {
             activeBets[userId] = { amount: parseFloat(amount), cashedOut: false };
