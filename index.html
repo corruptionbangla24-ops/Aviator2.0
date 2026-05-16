@@ -466,69 +466,74 @@
                 ctx.drawImage(blastImg, endX - (bSize / 2), endY - (bSize / 2), bSize, bSize);
             }
         }
+async function handleAction() {
+    try { document.getElementById('s-click').play(); } catch(e){}
+    const btn = document.getElementById('btn-1');
+    const amtLabel = document.getElementById('amt-1');
+    const currentBetAmount = parseInt(amtLabel.innerText);
 
-        async function handleAction() {
-            try { document.getElementById('s-click').play(); } catch(e){}
-            const btn = document.getElementById('btn-1');
-            const amtLabel = document.getElementById('amt-1');
-            const currentBetAmount = parseInt(amtLabel.innerText);
+    // 🛡️ ডাবল-ক্লিক লক প্রোটোকল: বাজি প্রসেস চলাকালীন অতিরিক্ত ক্লিক ব্লক করবে
+    if (btn.innerText === "BET" && window.isProcessingBet) return;
+    window.isProcessingBet = true;
 
-                   if (btn.innerText === "BET" && window.isProcessingBet) return;
-        window.isProcessingBet = true;
+    // 🎯 ইউআরএল থেকে ইউজার আইডি এবং সিলেক্ট করা একটিভ ওয়ালেটের নাম সংগ্রহ
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlUserId = urlParams.get('userId') || "Roky123";
+    const urlWallet = urlParams.get('wallet') || "main";
 
-        if (!isBetting) {
-            try {
-                const res = await fetch('/api/place-bet', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        amount: currentBetAmount,
-                        userId: new URLSearchParams(window.location.search).get('userId') || "Roky123"
-                    })
-                });
-                const data = await res.json();
-                window.isProcessingBet = false;
-                
-                if (data.success) {
-                    isBetting = true;
-                    btn.innerText = "CASH OUT";
-                    btn.classList.add('cashout');
-                } else {
-                    if(!isAutoBet) alert(data.message || "Insufficient Balance!");
-                }
-            } catch (e) { 
-                window.isProcessingBet = false;
-                console.error("Server Error!"); 
+    if (!isBetting) {
+        try {
+            const res = await fetch('/api/place-bet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: currentBetAmount,
+                    userId: urlUserId,
+                    wallet: urlWallet // ব্যাকএন্ডে ৩টি ওয়ালেট সিঙ্কের জন্য পাঠানো হলো
+                })
+            });
+            const data = await res.json();
+            window.isProcessingBet = false; // প্রসেস লক অফ
+            
+            if (data.success) {
+                isBetting = true;
+                btn.innerText = "CASH OUT";
+                btn.classList.add('cashout');
+            } else {
+                if(!isAutoBet) alert(data.message || "Insufficient Balance!");
             }
-        } else {
-            try {
-                const res = await fetch('/api/cash-out', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                 // index.html এর place-bet ফেচ রিকোয়েস্টের ভেতর body অংশটুকু ঠিক এরকম করে দিন:
-body: JSON.stringify({
-    amount: currentBetAmount,
-    userId: new URLSearchParams(window.location.search).get('userId') || "Roky123",
-    wallet: new URLSearchParams(window.location.search).get('wallet') || "main" // <--- এই নতুন লাইনটি যোগ করুন
-})
-   
-                });
-                const data = await res.json();
-                window.isProcessingBet = false;
-                
-                if (data.success) {
-                    isBetting = false;
-                    btn.innerText = "BET";
-                    btn.classList.remove('cashout');
-                    alert("You Won: " + data.winAmount + " BDT");
-                }
-            } catch (e) { 
-                window.isProcessingBet = false;
-                console.error(e); 
+        } catch (e) { 
+            window.isProcessingBet = false;
+            console.error("Server Error!"); 
+        }
+    } else {
+        try {
+            const res = await fetch('/api/cash-out', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: currentBetAmount,
+                    userId: urlUserId,
+                    wallet: urlWallet // ব্যাকএন্ডে জিতার পর সঠিক ওয়ালেটে টাকা প্লাস করার জন্য
+                })
+            });
+            const data = await res.json();
+            window.isProcessingBet = false; // প্রসেস লক অফ
+            
+            if (data.success) {
+                isBetting = false;
+                btn.innerText = "BET";
+                btn.classList.remove('cashout');
+                alert("You Won: " + data.winAmount + " BDT");
             }
+        } catch (e) { 
+            window.isProcessingBet = false;
+            console.error(e); 
         }
- 
-        }
+    }
+}
+
+        
 
         function setAmt(val) {
             document.getElementById('amt-1').innerText = val;
