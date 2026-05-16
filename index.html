@@ -481,30 +481,53 @@ async function handleAction() {
     const urlUserId = urlParams.get('userId') || "Roky123";
     const urlWallet = urlParams.get('wallet') || "main";
 
-    if (!isBetting) {
-        try {
-            const res = await fetch('/api/place-bet', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    amount: currentBetAmount,
-                    userId: urlUserId,
-                    wallet: urlWallet // ব্যাকএন্ডে ৩টি ওয়ালেট সিঙ্কের জন্য পাঠানো হলো
-                })
-            });
-            const data = await res.json();
-            window.isProcessingBet = false; // প্রসেস লক অফ
-            
-            if (data.success) {
-                isBetting = true;
-                btn.innerText = "CASH OUT";
-                btn.classList.add('cashout');
-            } else {
-                if(!isAutoBet) alert(data.message || "Insufficient Balance!");
-            }
-        } catch (e) { 
-            window.isProcessingBet = false;
-            console.error("Server Error!"); 
+if (!isBetting) {
+            try {
+                const res = await fetch('/api/place-bet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: currentBetAmount,
+                        userId: urlUserId,
+                        wallet: urlWallet
+                    })
+                });
+                const data = await res.json();
+                window.isProcessingBet = false;
+                
+                if (data.success) {
+                    isBetting = true;
+                    btn.innerText = "CASH OUT";
+                    btn.classList.add('cashout');
+                    
+                    // 🎯 ডাইনামিক ওয়ালেট রিফ্রেশার: প্লেয়ার স্ক্রিনে যে ওয়ালেট সিলেক্ট করেছে, ঠিক সেটির টেক্সটই লাইভ আপডেট হবে
+                    if (data.balance !== undefined) {
+                        let targetLabel = null;
+                        
+                        // আপনার থিমের ডাইনামিক ক্লাস বা আইডি অনুযায়ী সঠিক ওয়ালেট এলিমেন্ট খুঁজে বের করা
+                        if (urlWallet === 'pb') {
+                            targetLabel = document.getElementById('pb-balance') || document.querySelector('[id*="pb"]');
+                        } else if (urlWallet === 'bonus') {
+                            targetLabel = document.getElementById('bonus-balance') || document.querySelector('[id*="bonus"]');
+                        } else {
+                            targetLabel = document.getElementById('main-balance') || document.querySelector('.navbar b, [id*="main"]');
+                        }
+                        
+                        // যদি স্পেসিফিক আইডি না পায়, তবে কালো ব্যালেন্স বারের যেকোনো একটি একটিভ টেক্সট খুঁজে আপডেট করবে
+                        if (!targetLabel) {
+                            targetLabel = document.querySelector('.navbar b') || document.querySelector('.balance-text');
+                        }
+                        
+                        if (targetLabel) {
+                            targetLabel.innerText = parseFloat(data.balance).toFixed(2) + " BDT";
+                        }
+                    }
+                } else {
+                    if(!isAutoBet) alert(data.message || "Insufficient Balance!");
+                }
+            } catch (e) { 
+                window.isProcessingBet = false;
+                console.error("Server Error!"); 
         }
     } else {
         try {
