@@ -97,22 +97,29 @@ function triggerCrash() {
     io.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: 1, trigger_sound: true, history: crashHistory, players: livePlayersList });
     setTimeout(() => { startNewRound(); }, 5000);
 }
-
 // 🎰 ১. পিএইচপি এপিআই-এর সাথে বেট সিঙ্ক (Action: bet)
 app.post('/api/place-bet', async (req, res) => {
-    const { amount, userId } = req.body; // userId হিসেবে 'Roky123' আসবে
+    const { amount, userId } = req.body; 
     try {
-        const response = await axios.post(`${MAIN_SITE_URL}/api_callback.php`, {
+        // প্লাস (+) ব্যবহার করা হয়েছে যাতে মোবাইলের ব্যাকটিক চিহ্নের কোনো ভুল না হয়
+        const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', {
             action: "bet",
-            username: userId,
+            username: userId, 
             amount: parseFloat(amount),
             game_name: "Aviator"
         });
 
-        if (response.data.status === "ok") {
+        // পিএইচপি থেকে রেসপন্স চেক করা
+        if (response.data && response.data.status === "ok") {
             activeBets[userId] = { amount: parseFloat(amount), cashedOut: false };
-            res.json({ success: true, balance: response.data.balance || 0 });
+            
+            // পিএইচপি ব্যালেন্স না পাঠালে কারেন্ট ব্যালেন্স রিটার্ন করবে
+            let returnBalance = response.data.balance || (userBalance - amount);
+            userBalance = parseFloat(returnBalance); 
+
+            res.json({ success: true, balance: userBalance });
         } else {
+            // পিএইচপি থেকে আসা আসল এরর মেসেজ দেখাবে (যেমন: Insufficient Balance)
             res.json({ success: false, message: response.data.message || "Bet Declined!" });
         }
     } catch (e) {
@@ -126,19 +133,23 @@ app.post('/api/cash-out', async (req, res) => {
     if (!isCrashed && activeBets[userId] && !activeBets[userId].cashedOut) {
         let winAmount = activeBets[userId].amount * currentMultiplier;
         try {
-            const response = await axios.post(`${MAIN_SITE_URL}/api_callback.php`, {
+            const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', {
                 action: "win",
                 username: userId,
                 amount: parseFloat(winAmount.toFixed(2)),
                 game_name: "Aviator"
             });
 
-            if (response.data.status === "ok") {
+            if (response.data && response.data.status === "ok") {
                 activeBets[userId].cashedOut = true;
                 totalHouseIncoming -= winAmount;
-                res.json({ success: true, winAmount: winAmount.toFixed(2), balance: response.data.balance || 0 });
+                
+                let returnBalance = response.data.balance || (userBalance + winAmount);
+                userBalance = parseFloat(returnBalance);
+
+                res.json({ success: true, winAmount: winAmount.toFixed(2), balance: userBalance });
             } else {
-                res.json({ success: false, message: "Cashout Declined by Main Server" });
+                res.json({ success: false, message: response.data.message || "Cashout Declined!" });
             }
         } catch (e) {
             res.json({ success: false, message: "PHP Wallet Credit Error!" });
@@ -147,6 +158,8 @@ app.post('/api/cash-out', async (req, res) => {
         res.json({ success: false, message: "Game Over!" });
     }
 });
+
+
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
