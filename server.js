@@ -154,18 +154,7 @@ app.post('/api/place-bet', async (req, res) => {
 console.log("PHP Response Data:", response.data); 
  
 
-        if (response.data && response.data.status === "ok") {
-            activeBets[userId] = { amount: parseFloat(amount), cashedOut: false };
-            let returnBalance = response.data.balance || (userBalance - amount);
-            userBalance = parseFloat(returnBalance); 
-            res.json({ success: true, balance: userBalance });
-        } else {
-            res.json({ success: false, message: response.data.message || "Bet Declined!" });
-        }
-    } catch (e) {
-        res.json({ success: false, message: "PHP Wallet Timeout!" });
-    }
-});
+        
 
 // 💰 ২. পিএইচপি এপিআই-এর সাথে ক্যাশআউট সিঙ্ক (Action: win)
 app.post('/api/cash-out', async (req, res) => {
