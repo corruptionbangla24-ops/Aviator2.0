@@ -123,7 +123,7 @@ app.post('/api/place-bet', async (req, res) => {
     const { amount, userId, wallet } = req.body;
 
     // 🛡️ পারফেক্ট সিকিউরিটি লক: বিমান ওড়া শুরু করলে (১.০২x এর ওপরে গেলে এবং ক্রাশ না হলে) বেট লক হবে
-    if (currentMultiplier > 1.02 && !isCrashed) {
+    if (currentMultiplier <= 1.02||isCrashed) {
         return res.json({ success: false, message: "Started" });
     }
 
