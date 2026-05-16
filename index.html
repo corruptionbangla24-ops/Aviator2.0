@@ -362,12 +362,29 @@
                 });
             }
         }
-
-            if (data.is_crashed == 1) {
+        if (data.is_crashed == 1) {
+            if (!isCrashed) {
                 isCrashed = true;
                 mText.innerText = "Bursting!";
                 mText.style.color = "red";
-                
+
+                // ⏳ ৮ সেকেন্ডের লাইভ কাউন্টডাউন টাইমার শুরু
+                const timerText = document.getElementById('game-timer');
+                if (timerText) {
+                    timerText.style.display = "block";
+                    let timeLeft = 8.00;
+                    if (window.countdownInterval) clearInterval(window.countdownInterval);
+                    window.countdownInterval = setInterval(() => {
+                        timeLeft -= 0.05;
+                        if (timeLeft <= 0) {
+                            clearInterval(window.countdownInterval);
+                            timerText.style.display = "none";
+                        } else {
+                            timerText.innerText = "Next Round In " + timeLeft.toFixed(2) + "s";
+                        }
+                    }, 50);
+                }
+
                 const flySound = document.getElementById('s-fly');
                 const crashSound = document.getElementById('s-crash');
                 if (flySound) { flySound.pause(); flySound.currentTime = 0; }
@@ -376,29 +393,41 @@
                 if (isBetting) {
                     isBetting = false;
                     const btn = document.getElementById('btn-1');
-                    btn.innerText = "BET";
-                    btn.classList.remove('cashout');
-                }
-            } else {
-                if (isCrashed && currentMultiplierVal <= 1.01) {
-                    isCrashed = false;
-                    if (isAutoBet && !isBetting) {
-                        handleAction(); 
+                    if(btn) {
+                        btn.innerText = "BET";
+                        btn.classList.remove('cashout');
                     }
                 }
+            }
+        } else {
+            // 🛑 নতুন রাউন্ডে প্লেন ওড়া শুরু হলে টাইমার বন্ধ হবে
+            const timerText = document.getElementById('game-timer');
+            if (timerText) {
+                if (window.countdownInterval) clearInterval(window.countdownInterval);
+                timerText.style.display = "none";
+            }
 
-                mText.innerText = currentMultiplierVal.toFixed(2) + "x";
-                mText.style.color = "white";
-
-                const flySound = document.getElementById('s-fly');
-                if (flySound && flySound.paused && currentMultiplierVal > 1.02) {
-                    flySound.play().catch(()=>{});
-                }
-
-                if (isBetting && isAutoCashout && currentMultiplierVal >= autoCashoutValue) {
+            if (isCrashed && currentMultiplierVal <= 1.01) {
+                isCrashed = false;
+                if (isAutoBet && !isBetting) {
                     handleAction();
                 }
             }
+
+            mText.innerText = currentMultiplierVal.toFixed(2) + "x";
+            mText.style.color = "white";
+
+            const flySound = document.getElementById('s-fly');
+            if (flySound && flySound.paused && currentMultiplierVal > 1.02) {
+                flySound.play().catch(()=>{});
+            }
+
+            if (isBetting && isAutoCashout && currentMultiplierVal >= autoCashoutValue) {
+                handleAction();
+            }
+        }
+
+            
         });
 
         function gameLoop() {
