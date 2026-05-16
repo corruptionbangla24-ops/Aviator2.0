@@ -123,17 +123,32 @@ function triggerCrash() {
 
 // 🎰 ১. পিএইচপি এপিআই-এর সাথে বেট সিঙ্ক (Action: bet)
 app.post('/api/place-bet', async (req, res) => {
-    const { amount, userId } = req.body; 
+    const { amount, userId, wallet } = req.body; // ফ্রন্টএন্ড থেকে ওয়ালেটের নাম ধরা হলো
+
+    if (currentMultiplier > 1.02 && !isCrashed) {
+        return res.json({ success: false, message: "Started" });
+    }
+
     try {
-     if (currentMultiplier > 1.02 && !isCrashed) {
-            return res.json({ success: false, message: "Game already started! Wait for next round." });
-        }   
-       const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', {
-    action: "bet",
-    username: userId, 
-    amount: parseFloat(amount),
-    game_name: "Aviator"
+        const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', {
+            action: "bet",
+            username: userId, 
+            amount: parseFloat(amount),
+            wallet: wallet || "main", // <--- পিএইচপিতে এক্টিভ ওয়ালেটের নাম পাস করা হলো
+            game_name: "Aviator"
+        });
+
+        if (response.data && response.data.status === "ok") {
+            activeBets[userId] = { amount: parseFloat(amount), cashedOut: false };
+            res.json({ success: true, balance: response.data.balance });
+        } else {
+            res.json({ success: false, message: response.data.message || "Bet Declined!" });
+        }
+    } catch (e) {
+        res.json({ success: false, message: "PHP Wallet Timeout!" });
+    }
 });
+
 
 // এই লাইনটি যোগ করুন। এটি আপনার Termux স্ক্রিনে পিএইচপির আসল উত্তরটি প্রিন্ট করবে
 console.log("PHP Response Data:", response.data); 
