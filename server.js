@@ -99,12 +99,23 @@ function triggerCrash() {
     isCrashed = true;
     crashHistory.unshift(currentMultiplier.toFixed(2));
     if (crashHistory.length > 12) crashHistory.pop(); 
+            Object.keys(activeBets).forEach(async (uid) => {
+                if (activeBets[uid] && !activeBets[uid].cashedOut) {
+                    totalHouseIncoming += activeBets[uid].amount;
+                    
+                    // 📝 বিমান ক্রাশ করার সাথে সাথে মূল পিএইচপি সাইটে LOSS স্ট্যাটাস পাঠানোর এপিআই কল
+                    try {
+                        await axios.post(MAIN_SITE_URL + '/api_callback.php', {
+                            action: "loss",
+                            username: uid,
+                            amount: parseFloat(activeBets[uid].amount),
+                            game_name: "Casino"
+                        });
+                    } catch(e) { console.log("Loss log failed"); }
+                }
+            });
 
-    Object.keys(activeBets).forEach(uid => {
-        if (activeBets[uid] && !activeBets[uid].cashedOut) {
-            totalHouseIncoming += activeBets[uid].amount;
-        }
-    });
+    
 
     io.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: 1, trigger_sound: true, history: crashHistory, players: livePlayersList });
     setTimeout(() => { startNewRound(); }, 5000);
