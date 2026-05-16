@@ -505,10 +505,13 @@
                 const res = await fetch('/api/cash-out', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        amount: currentBetAmount,
-                        userId: new URLSearchParams(window.location.search).get('userId') || "Roky123"
-                    })
+                 // index.html এর place-bet ফেচ রিকোয়েস্টের ভেতর body অংশটুকু ঠিক এরকম করে দিন:
+body: JSON.stringify({
+    amount: currentBetAmount,
+    userId: new URLSearchParams(window.location.search).get('userId') || "Roky123",
+    wallet: new URLSearchParams(window.location.search).get('wallet') || "main" // <--- এই নতুন লাইনটি যোগ করুন
+})
+   
                 });
                 const data = await res.json();
                 window.isProcessingBet = false;
