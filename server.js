@@ -109,7 +109,7 @@ function triggerCrash() {
                             action: "loss",
                             username: uid,
                             amount: parseFloat(activeBets[uid].amount),
-                            game_name: "Casino"
+                            game_name: "Aviator"
                         });
                     } catch(e) { console.log("Loss log failed"); }
                 }
