@@ -154,33 +154,39 @@ console.log("PHP Response Data:", response.data);
 
 // 💰 ২. পিএইচপি এপিআই-এর সাথে ক্যাশআউট সিঙ্ক (Action: win)
 app.post('/api/cash-out', async (req, res) => {
-    const { userId } = req.body;
-    if (!isCrashed && activeBets[userId] && !activeBets[userId].cashedOut) {
-        let winAmount = activeBets[userId].amount * currentMultiplier;
+    const { userId, amount } = req.body; // ফ্রন্টএন্ড থেকে পাঠানো বাজি ধরার অ্যামাউন্ট
+    let targetBet = amount || (activeBets[userId] ? activeBets[userId].amount : 0);
+
+    if (!isCrashed && targetBet > 0 && activeBets[userId] && !activeBets[userId].cashedOut) {
+        let winAmount = targetBet * currentMultiplier;
         try {
+            // পিএইচপি সাইটে উইন সিগন্যাল পাঠানোর সাথে বাজি ধরার আসল পরিমাণটিও (bet_amount) পাঠানো হচ্ছে
             const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', {
                 action: "win",
                 username: userId,
                 amount: parseFloat(winAmount.toFixed(2)),
-                game_name: "Casino"
+                bet_amount: parseFloat(targetBet), // নির্দিষ্ট বাজিকে ডাটাবেজে ট্র্যাক করার জন্য
+                game_name: "Aviator"
             });
 
             if (response.data && response.data.status === "ok") {
                 activeBets[userId].cashedOut = true;
                 totalHouseIncoming -= winAmount;
+                
                 let returnBalance = response.data.balance || (userBalance + winAmount);
                 userBalance = parseFloat(returnBalance);
                 res.json({ success: true, winAmount: winAmount.toFixed(2), balance: userBalance });
             } else {
-                res.json({ success: false, message: response.data.message || "Cashout Declined!" });
+                res.json({ success: false, message: "Cashout Declined by Server!" });
             }
         } catch (e) {
             res.json({ success: false, message: "PHP Wallet Credit Error!" });
         }
     } else {
-        res.json({ success: false, message: "Game Over!" });
+        res.json({ success: false, message: "Game Over or Invalid Cashout!" });
     }
 });
+
 
 // সিক্রেট অ্যাডমিন ড্যাশবোর্ড
 app.get('/secret-admin', (req, res) => {
