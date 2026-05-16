@@ -125,6 +125,9 @@ function triggerCrash() {
 app.post('/api/place-bet', async (req, res) => {
     const { amount, userId } = req.body; 
     try {
+     if (currentMultiplier > 1.02 && !isCrashed) {
+            return res.json({ success: false, message: "Game already started! Wait for next round." });
+        }   
        const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', {
     action: "bet",
     username: userId, 
