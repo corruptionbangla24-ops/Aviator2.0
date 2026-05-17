@@ -467,6 +467,7 @@
             }
         }
 
+
 async function handleAction() {
     try { document.getElementById('s-click').play(); } catch(e){}
     const btn = document.getElementById('btn-1');
@@ -477,9 +478,16 @@ async function handleAction() {
     if (btn.innerText === "BET" && window.isProcessingBet) return;
     window.isProcessingBet = true;
 
+    // 🎯 ডাইনামিক ইউজারনেম ফিক্স: সরাসরি লিঙ্কের userId প্যারামিটার রিড করা হবে
     const urlParams = new URLSearchParams(window.location.search);
-    const urlUserId = urlParams.get('userId') || "Roky123";
+    const urlUserId = urlParams.get('userId') || urlParams.get('username') || "";
     const urlWallet = urlParams.get('wallet') || "main";
+
+    if (!urlUserId) {
+        window.isProcessingBet = false;
+        alert("Session Expired! Please re-login.");
+        return;
+    }
 
     if (!isBetting) {
         try {
@@ -495,13 +503,12 @@ async function handleAction() {
             const data = await res.json();
             window.isProcessingBet = false;
             
-            // 🎯 বাজি ধরার সাকসেস ব্লক (আপনার কাঙ্ক্ষিত কোডটি এখানে সেট করা হয়েছে)
             if (data.success) {
                 isBetting = true;
                 btn.innerText = "CASH OUT";
                 btn.classList.add('cashout');
                 
-                // মেইন সাইটকে ব্যালেন্স কাটার সিগন্যাল পাঠানো
+                // মেইন সাইটকে ব্যালেন্স কাটার লাইভ সিগন্যাল পাঠানো
                 if (window.parent) {
                     window.parent.postMessage({ action: "refresh_wallet" }, "*");
                 }
@@ -526,14 +533,13 @@ async function handleAction() {
             const data = await res.json();
             window.isProcessingBet = false;
             
-            // 🎯 ক্যাশআউট করার সাকসেস ব্লক (জিতার পরেও মেইন সাইটের ব্যালেন্স প্লাস করার সিগন্যাল)
             if (data.success) {
                 isBetting = false;
                 btn.innerText = "BET";
                 btn.classList.remove('cashout');
                 alert("You Won: " + data.winAmount + " BDT");
                 
-                // মেইন সাইটকে ব্যালেন্স প্লাস করার সিগন্যাল পাঠানো
+                // মেইন সাইটকে ব্যালেন্স প্লাস করার লাইভ সিগন্যাল পাঠানো
                 if (window.parent) {
                     window.parent.postMessage({ action: "refresh_wallet" }, "*");
                 }
@@ -544,6 +550,7 @@ async function handleAction() {
         }
     }
 }
+
 
 
         
