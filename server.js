@@ -15,8 +15,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname)); 
 
-// 🔗 আপনার মূল পিএইচপি সাইটের ডোমেইন লিঙ্ক (শেষে / দেবেন না)
-const MAIN_SITE_URL = "https://betlover247.onrender.com"; 
+// 🎯 আপনার নতুন ডোমেইন লিঙ্কটি এখানে নিখুঁতভাবে সেট করা হলো
+const MAIN_SITE_URL = "https://onrender.com"; 
 
 // অ্যাডমিন প্যানেল ভেরিয়েবল
 const ADMIN_USERNAME = "admin";
@@ -115,14 +115,15 @@ function triggerCrash() {
     });
 
     io.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: 1, trigger_sound: true, history: crashHistory, players: livePlayersList });
-    setTimeout(() => { startNewRound(); }, 8000);
+    setTimeout(() => { startNewRound(); }, 8000); // ⏳ পারফেক্ট ৮ সেকেন্ড টাইমার বিরতি
 }
+
 // 🎰 ১. পিএইচপি এপিআই-এর সাথে বেট সিঙ্ক (Action: bet)
 app.post('/api/place-bet', async (req, res) => {
     const { amount, userId, wallet } = req.body;
 
-    // 🛡️ ডাইনামিক সিকিউরিটি লক ফিক্স: প্লেন ১.০২x এর ওপরে গেলেই কেবল বাজি লক হবে, টাইমার চলাকালীন (১.০০x এ) বাজি ১০০% সচল থাকবে
-    if (currentMultiplier > 1.02) {
+    // 🛡️ ১০০০০% একুরেট সিকিউরিটি লক: বিমান ওড়া শুরু করলেই কেবল নতুন বেট রিজেক্ট হবে, টাইমারের সময় ১০০% সচল থাকবে
+    if (currentMultiplier > 1.02 && !isCrashed) {
         return res.json({ success: false, message: "Started" });
     }
 
@@ -145,8 +146,6 @@ app.post('/api/place-bet', async (req, res) => {
         res.json({ success: false, message: "PHP Wallet Timeout!" });
     }
 });
-
-
 
 // 💰 ২. পিএইচপি এপিআই-এর সাথে ক্যাশআউট সিঙ্ক (Action: win)
 app.post('/api/cash-out', async (req, res) => {
