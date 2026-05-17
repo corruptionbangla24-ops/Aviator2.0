@@ -467,22 +467,25 @@
             }
         }
 
+
 async function handleAction() {
     try { document.getElementById('s-click').play(); } catch(e){}
     const btn = document.getElementById('btn-1');
     const amtLabel = document.getElementById('amt-1');
     const currentBetAmount = parseInt(amtLabel.innerText);
 
+    // 🛡️ ডাবল-ক্লিক লক প্রোটোকল: বাজি প্রসেস চলাকালীন অতিরিক্ত ক্লিক সম্পূর্ণ ব্লক করবে
     if (btn.innerText === "BET" && window.isProcessingBet) return;
     window.isProcessingBet = true;
 
+    // 🎯 ইউআরএল প্যারামিটার থেকে ইউজার আইডি এবং সিলেক্ট করা একটিভ ওয়ালেটের নাম সংগ্রহ
     const urlParams = new URLSearchParams(window.location.search);
     const urlUserId = urlParams.get('userId') || urlParams.get('username') || "";
     const urlWallet = urlParams.get('wallet') || "main";
 
     if (!urlUserId) {
         window.isProcessingBet = false;
-        console.log("Session Expired");
+        console.log("Session Expired! Please re-login.");
         return;
     }
 
@@ -498,19 +501,19 @@ async function handleAction() {
                 })
             });
             const data = await res.json();
-            window.isProcessingBet = false;
+            window.isProcessingBet = false; // প্রসেস লক অফ
             
+            // 🎰 বাজি ধরার সাকসেস ব্লক
             if (data.success) {
                 isBetting = true;
                 btn.innerText = "CASH OUT";
                 btn.classList.add('cashout');
                 
-                // মেইন সাইটকে ব্যালেন্স কাটার লাইভ সিগন্যাল পাঠানো
+                // 🔄 মেইন সাইটকে ব্যালেন্স কাটার লাইভ সিগন্যাল পাঠানো (আইফ্রেম দেয়াল ভেঙে কাজ করবে)
                 if (window.parent) {
                     window.parent.postMessage({ action: "refresh_wallet" }, "*");
                 }
             } else {
-                // 🛡️ ব্রাউজার ব্লকিং এড়াতে alert() কেটে console.log বা কাস্টম টেক্সট করা হলো
                 console.log(data.message || "Insufficient Balance!");
             }
         } catch (e) { 
@@ -529,18 +532,16 @@ async function handleAction() {
                 })
             });
             const data = await res.json();
-            window.isProcessingBet = false;
+            window.isProcessingBet = false; // প্রসেস লক অফ
             
+            // 💰 ক্যাশআউট করার সাকসেস ব্লক
             if (data.success) {
                 isBetting = false;
                 btn.innerText = "BET";
                 btn.classList.remove('cashout');
-                
-                // 🛡️ লাইন ৫১৬ ফিক্সড: ব্রাউজার ক্রাশ করা alert() সম্পূর্ণ মুছে দেওয়া হলো। 
-                // গেমের ভেতরের নিজস্ব বড় উইন টেক্সট এমনিতেই শো করবে, তাই এটি দরকার নেই।
                 console.log("You Won: " + data.winAmount + " BDT");
                 
-                // মেইন সাইটকে ব্যালেন্স প্লাস করার লাইভ সিগন্যাল পাঠানো
+                // 🔄 মেইন সাইটকে ব্যালেন্স প্লাস করার লাইভ সিগন্যাল পাঠানো
                 if (window.parent) {
                     window.parent.postMessage({ action: "refresh_wallet" }, "*");
                 }
