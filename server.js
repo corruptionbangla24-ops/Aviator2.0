@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname)); 
 
 // 🎯 আপনার নতুন ডোমেইন লিঙ্কটি এখানে নিখুঁতভাবে সেট করা হলো
-const MAIN_SITE_URL = "https://onrender.com"; 
+const MAIN_SITE_URL = "https://aviator2-0-azym.onrender.com"; 
 
 // অ্যাডমিন প্যানেল ভেরিয়েবল
 const ADMIN_USERNAME = "admin";
