@@ -117,13 +117,12 @@ function triggerCrash() {
     io.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: 1, trigger_sound: true, history: crashHistory, players: livePlayersList });
     setTimeout(() => { startNewRound(); }, 8000);
 }
-
 // 🎰 ১. পিএইচপি এপিআই-এর সাথে বেট সিঙ্ক (Action: bet)
 app.post('/api/place-bet', async (req, res) => {
     const { amount, userId, wallet } = req.body;
 
-    // 🛡️ পারফেক্ট সিকিউরিটি লক: বিমান ওড়া শুরু করলে (১.০২x এর ওপরে গেলে এবং ক্রাশ না হলে) বেট লক হবে
-    if (currentMultiplier <= 1.02||isCrashed) {
+    // 🛡️ ডাইনামিক সিকিউরিটি লক ফিক্স: প্লেন ১.০২x এর ওপরে গেলেই কেবল বাজি লক হবে, টাইমার চলাকালীন (১.০০x এ) বাজি ১০০% সচল থাকবে
+    if (currentMultiplier > 1.02) {
         return res.json({ success: false, message: "Started" });
     }
 
@@ -146,6 +145,7 @@ app.post('/api/place-bet', async (req, res) => {
         res.json({ success: false, message: "PHP Wallet Timeout!" });
     }
 });
+
 
 
 // 💰 ২. পিএইচপি এপিআই-এর সাথে ক্যাশআউট সিঙ্ক (Action: win)
