@@ -467,25 +467,22 @@
             }
         }
 
-
 async function handleAction() {
     try { document.getElementById('s-click').play(); } catch(e){}
     const btn = document.getElementById('btn-1');
     const amtLabel = document.getElementById('amt-1');
     const currentBetAmount = parseInt(amtLabel.innerText);
 
-    // 🛡️ ডাবল-ক্লিক লক প্রোটোকল
     if (btn.innerText === "BET" && window.isProcessingBet) return;
     window.isProcessingBet = true;
 
-    // 🎯 ডাইনামিক ইউজারনেম ফিক্স: সরাসরি লিঙ্কের userId প্যারামিটার রিড করা হবে
     const urlParams = new URLSearchParams(window.location.search);
     const urlUserId = urlParams.get('userId') || urlParams.get('username') || "";
     const urlWallet = urlParams.get('wallet') || "main";
 
     if (!urlUserId) {
         window.isProcessingBet = false;
-        alert("Session Expired! Please re-login.");
+        console.log("Session Expired");
         return;
     }
 
@@ -513,7 +510,8 @@ async function handleAction() {
                     window.parent.postMessage({ action: "refresh_wallet" }, "*");
                 }
             } else {
-                if(!isAutoBet) alert(data.message || "Insufficient Balance!");
+                // 🛡️ ব্রাউজার ব্লকিং এড়াতে alert() কেটে console.log বা কাস্টম টেক্সট করা হলো
+                console.log(data.message || "Insufficient Balance!");
             }
         } catch (e) { 
             window.isProcessingBet = false;
@@ -537,7 +535,10 @@ async function handleAction() {
                 isBetting = false;
                 btn.innerText = "BET";
                 btn.classList.remove('cashout');
-                alert("You Won: " + data.winAmount + " BDT");
+                
+                // 🛡️ লাইন ৫১৬ ফিক্সড: ব্রাউজার ক্রাশ করা alert() সম্পূর্ণ মুছে দেওয়া হলো। 
+                // গেমের ভেতরের নিজস্ব বড় উইন টেক্সট এমনিতেই শো করবে, তাই এটি দরকার নেই।
+                console.log("You Won: " + data.winAmount + " BDT");
                 
                 // মেইন সাইটকে ব্যালেন্স প্লাস করার লাইভ সিগন্যাল পাঠানো
                 if (window.parent) {
@@ -550,6 +551,8 @@ async function handleAction() {
         }
     }
 }
+
+
 
 
 
