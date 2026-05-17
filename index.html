@@ -466,22 +466,23 @@
                 ctx.drawImage(blastImg, endX - (bSize / 2), endY - (bSize / 2), bSize, bSize);
             }
         }
-async function handleAction() {
+
+
+        async function handleAction() {
     try { document.getElementById('s-click').play(); } catch(e){}
     const btn = document.getElementById('btn-1');
     const amtLabel = document.getElementById('amt-1');
     const currentBetAmount = parseInt(amtLabel.innerText);
 
-    // 🛡️ ডাবল-ক্লিক সেফটি চেক: যদি অলরেডি প্রসেসিং চলে তবে দ্বিতীয় ক্লিক ব্লক হবে
     if (window.isProcessingBet) return;
-    window.isProcessingBet = true; // লক অন করা হলো
+    window.isProcessingBet = true;
 
     const urlParams = new URLSearchParams(window.location.search);
     const urlUserId = urlParams.get('userId') || urlParams.get('username') || "";
     const urlWallet = urlParams.get('wallet') || "main";
 
     if (!urlUserId) {
-        window.isProcessingBet = false; // লক আনলক করা হলো
+        window.isProcessingBet = false;
         console.log("Session Expired! Please re-login.");
         return;
     }
@@ -499,7 +500,7 @@ async function handleAction() {
             });
             const data = await res.json();
             
-            // 🎯 ক্যাশ মেমোরি রিসেট: রেসপন্স আসার সাথে সাথে বাটন আবার চাপার জন্য রেডি হবে
+            // ক্যাশ মেমোরি রিসেট করা হলো
             window.isProcessingBet = false; 
             
             if (data.success) {
@@ -507,7 +508,6 @@ async function handleAction() {
                 btn.innerText = "CASH OUT";
                 btn.classList.add('cashout');
                 
-                // 🔄 আইফ্রেমের দেয়াল ভেঙে মেইন পেজকে ব্যালেন্স কাটার সিগন্যাল পাঠানো
                 if (window.parent) {
                     window.parent.postMessage({ action: "refresh_wallet" }, "*");
                 }
@@ -515,7 +515,7 @@ async function handleAction() {
                 console.log(data.message || "Bet Declined!");
             }
         } catch (e) { 
-            window.isProcessingBet = false; // এরর খেলেও যাতে বাটন লক হয়ে না থাকে
+            window.isProcessingBet = false;
             console.error("Server Error!"); 
         }
     } else {
@@ -530,7 +530,7 @@ async function handleAction() {
                 })
             });
             const data = await res.json();
-            window.isProcessingBet = false; // লক আনলক করা হলো
+            window.isProcessingBet = false;
             
             if (data.success) {
                 isBetting = false;
@@ -538,39 +538,40 @@ async function handleAction() {
                 btn.classList.remove('cashout');
                 console.log("You Won: " + data.winAmount + " BDT");
                 
-                // 🔄 মেইন সাইটকে ব্যালেন্স প্লাস করার লাইভ সিগন্যাল পাঠানো
                 if (window.parent) {
                     window.parent.postMessage({ action: "refresh_wallet" }, "*");
                 }
             }
         } catch (e) { 
-            window.isProcessingBet = false; // লক আনলক করা হলো
+            window.isProcessingBet = false;
             console.error(e); 
         }
     }
 }
 
+function setAmt(val) {
+    document.getElementById('amt-1').innerText = val;
+    try { document.getElementById('s-click').play(); } catch(e){}
+}
 
-        function setAmt(val) {
-            document.getElementById('amt-1').innerText = val;
-            try { document.getElementById('s-click').play(); } catch(e){}
-        }
+function changeAmt(diff) {
+    const amtLabel = document.getElementById('amt-1');
+    let current = parseInt(amtLabel.innerText);
+    current = Math.max(10, current + diff);
+    amtLabel.innerText = current;
+    try { document.getElementById('s-click').play(); } catch(e){}
+}
 
-        function changeAmt(diff) {
-            const amtLabel = document.getElementById('amt-1');
-            let current = parseInt(amtLabel.innerText);
-            current = Math.max(10, current + diff);
-            amtLabel.innerText = current;
-            try { document.getElementById('s-click').play(); } catch(e){}
-        }
+function toggleTab(type) {
+    const autoPanel = document.getElementById('auto-settings-panel');
+    document.getElementById('tab-bet').classList.remove('active-tab');
+    document.getElementById('tab-auto').classList.remove('active-tab');
 
-        function toggleTab(type) {
-            const autoPanel = document.getElementById('auto-settings-panel');
-            document.getElementById('tab-bet').classList.remove('active-tab');
-            document.getElementById('tab-auto').classList.remove('active-tab');
-
-            if (type === 'bet') {
-                document.getElementById('tab-bet').classList.add('active-tab');
-                autoPanel.style.display = 'none';
-            } else {
-    
+    if (type === 'bet') {
+        document.getElementById('tab-bet').classList.add('active-tab');
+        autoPanel.style.display = 'none';
+    } else {
+        document.getElementById('tab-auto').classList.add('active-tab');
+        autoPanel.style.display = 'flex';
+    }
+}
