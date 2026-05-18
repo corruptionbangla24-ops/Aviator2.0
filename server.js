@@ -6,90 +6,37 @@ const axios = require('axios');
 
 const app = express();
 const server = http.createServer(app);
-
-const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] }
-});
+const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(__dirname)); 
 
-// 🎯 আপনার নতুন ডোমেইন লিঙ্কটি এখানে নিখুঁতভাবে সেট করা হলো
-const MAIN_SITE_URL = "https://aviator2-0-azym.onrender.com"; 
+// 🎯 ইমেজ ও অডিও ফাইল সরাসরি রুট ফোল্ডার থেকে ব্রাউজারে লাইভ শো করানোর ফিক্সড রুট
+app.use(express.static(__dirname));
+app.use('/*.png', express.static(__dirname));
+app.use('/*.mp3', express.static(__dirname));
 
-// অ্যাডমিন প্যানেল ভেরিয়েবল
-const ADMIN_USERNAME = "admin";
-const ADMIN_PASSWORD = "mysecretpassword123";
-let nextCrashPoint = null; 
-let currentRTP = 0.90;     
+const MAIN_SITE_URL = "https://onrender.com"; 
 
-// গেম কোর ভেরিয়েবল
 let currentMultiplier = 1.00;
 let isCrashed = false;
 let gameInterval = null;
-let userBalance = 5000.00; 
-let totalHouseIncoming = 2000.00; 
 let activeBets = {}; 
-let crashHistory = ["1.50", "3.20", "1.12", "8.50"];
-
-// লাইভ ফেক প্লেয়ার লিস্ট
+let crashHistory = ["1.50", "2.10", "1.12", "5.40"];
 let livePlayersList = [];
-const fakeNames = ["Aviator_King", "Roni_BD", "SkyWalker", "Jackpot_77", "Pilot_Kamal", "BetMaster", "CryptoFly", "Nisha_01", "Boss_Rahat", "Sabbir_22"];
-
-function generateFakePlayers() {
-    livePlayersList = [];
-    let playerCount = Math.floor(Math.random() * 5) + 5; 
-    for (let i = 0; i < playerCount; i++) {
-        let name = fakeNames[Math.floor(Math.random() * fakeNames.length)] + "_" + Math.floor(Math.random() * 900 + 100);
-        let bet = (Math.floor(Math.random() * 10 + 1) * 50); 
-        let cashoutAt = (Math.random() * 3 + 1.2).toFixed(2); 
-        livePlayersList.push({ username: name, betAmount: bet.toFixed(2), targetMultiplier: parseFloat(cashoutAt), winAmount: "-", isCashedOut: false });
-    }
-}
 
 function startNewRound() {
     currentMultiplier = 1.00;
     isCrashed = false;
     activeBets = {}; 
-    generateFakePlayers();
+    livePlayersList = [{ username: "Bot_Pilot", betAmount: "200.00", targetMultiplier: 1.50, winAmount: "-", isCashedOut: false }];
 
     gameInterval = setInterval(() => {
         if (!isCrashed) {
-            currentMultiplier += (currentMultiplier < 2.00) ? 0.01 : (currentMultiplier < 10.00) ? 0.05 : 0.18;
+            currentMultiplier += (currentMultiplier < 2.00) ? 0.01 : 0.06;
+            io.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: 0, history: crashHistory, players: livePlayersList });
 
-            livePlayersList.forEach(player => {
-                if (!player.isCashedOut && currentMultiplier >= player.targetMultiplier) {
-                    player.isCashedOut = true;
-                    player.winAmount = (player.betAmount * player.targetMultiplier).toFixed(2);
-                }
-            });
-
-            io.emit("gameUpdate", {
-                multiplier: currentMultiplier.toFixed(2),
-                is_crashed: 0,
-                history: crashHistory,
-                players: livePlayersList
-            });
-
-            if (nextCrashPoint && currentMultiplier >= nextCrashPoint) {
-                nextCrashPoint = null; 
-                triggerCrash();
-                return;
-            }
-
-            Object.keys(activeBets).forEach(uid => {
-                if (activeBets[uid] && !activeBets[uid].cashedOut) {
-                    let potentialPayout = activeBets[uid].amount * currentMultiplier;
-                    if (potentialPayout >= (totalHouseIncoming * currentRTP)) {
-                        triggerCrash();
-                    }
-                }
-            });
-
-            if (!nextCrashPoint && currentMultiplier >= (Math.random() * 19 + 1.05)) {
-                triggerCrash();
-            }
+            if (currentMultiplier >= (Math.random() * 15 + 1.05)) { triggerCrash(); }
         }
     }, 50);
 }
@@ -98,56 +45,31 @@ function triggerCrash() {
     clearInterval(gameInterval);
     isCrashed = true;
     crashHistory.unshift(currentMultiplier.toFixed(2));
-    if (crashHistory.length > 12) crashHistory.pop(); 
+    if (crashHistory.length > 10) crashHistory.pop(); 
 
     Object.keys(activeBets).forEach(async (uid) => {
         if (activeBets[uid] && !activeBets[uid].cashedOut) {
-            totalHouseIncoming += activeBets[uid].amount;
-            try {
-                await axios.post(MAIN_SITE_URL + '/api_callback.php', {
-                    action: "loss",
-                    username: uid,
-                    amount: parseFloat(activeBets[uid].amount),
-                    game_name: "Aviator"
-                });
-            } catch(e) { console.log("Loss log failed"); }
+            try { await axios.post(MAIN_SITE_URL + '/api_callback.php', { action: "loss", username: uid, game_name: "Aviator" }); } catch(e){}
         }
     });
 
-    io.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: 1, trigger_sound: true, history: crashHistory, players: livePlayersList });
-    setTimeout(() => { startNewRound(); }, 8000); // ⏳ পারফেক্ট ৮ সেকেন্ড টাইমার বিরতি
+    io.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: 1, history: crashHistory, players: livePlayersList });
+    setTimeout(() => { startNewRound(); }, 7000);
 }
 
-// 🎰 ১. পিএইচপি এপিআই-এর সাথে বেট সিঙ্ক (Action: bet)
 app.post('/api/place-bet', async (req, res) => {
     const { amount, userId, wallet } = req.body;
-
-    // 🛡️ ১০০০০% একুরেট সিকিউরিটি লক: বিমান ওড়া শুরু করলেই কেবল নতুন বেট রিজেক্ট হবে, টাইমারের সময় ১০০% সচল থাকবে
-    if (currentMultiplier > 1.02 && !isCrashed) {
-        return res.json({ success: false, message: "Started" });
-    }
+    if (currentMultiplier > 1.02 && !isCrashed) { return res.json({ success: false, message: "Started" }); }
 
     try {
-        const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', {
-            action: "bet",
-            username: userId, 
-            amount: parseFloat(amount),
-            wallet: wallet || "main",
-            game_name: "Aviator"
-        });
-
+        const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', { action: "bet", username: userId, amount: parseFloat(amount), wallet: wallet });
         if (response.data && response.data.status === "ok") {
             activeBets[userId] = { amount: parseFloat(amount), cashedOut: false };
             res.json({ success: true, balance: response.data.balance });
-        } else {
-            res.json({ success: false, message: response.data.message || "Bet Declined!" });
-        }
-    } catch (e) {
-        res.json({ success: false, message: "PHP Wallet Timeout!" });
-    }
+        } else { res.json({ success: false, message: response.data.message || "Declined!" }); }
+    } catch (e) { res.json({ success: false, message: "Timeout!" }); }
 });
 
-// 💰 ২. পিএইচপি এপিআই-এর সাথে ক্যাশআউট সিঙ্ক (Action: win)
 app.post('/api/cash-out', async (req, res) => {
     const { userId, amount, wallet } = req.body;
     let targetBet = amount || (activeBets[userId] ? activeBets[userId].amount : 0);
@@ -155,78 +77,15 @@ app.post('/api/cash-out', async (req, res) => {
     if (!isCrashed && targetBet > 0 && activeBets[userId] && !activeBets[userId].cashedOut) {
         let winAmount = targetBet * currentMultiplier;
         try {
-            const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', {
-                action: "win",
-                username: userId,
-                amount: parseFloat(winAmount.toFixed(2)),
-                bet_amount: parseFloat(targetBet),
-                wallet: wallet || "main",
-                game_name: "Aviator"
-            });
-
+            const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', { action: "win", username: userId, amount: parseFloat(winAmount.toFixed(2)), wallet: wallet });
             if (response.data && response.data.status === "ok") {
                 activeBets[userId].cashedOut = true;
-                totalHouseIncoming -= winAmount;
                 res.json({ success: true, winAmount: winAmount.toFixed(2), balance: response.data.balance });
-            } else {
-                res.json({ success: false, message: "Cashout Declined by Server!" });
-            }
-        } catch (e) {
-            res.json({ success: false, message: "PHP Wallet Credit Error!" });
-        }
-    } else {
-        res.json({ success: false, message: "Game Over or Invalid Cashout!" });
-    }
-});
-
-// সিক্রেট অ্যাডমিন ড্যাশবোর্ড
-app.get('/secret-admin', (req, res) => {
-    res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Aviator Admin</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                body { background: #111; color: #fff; font-family: Arial; padding: 20px; text-align: center; }
-                input, button { padding: 12px; margin: 10px; width: 85%; max-width: 300px; border-radius: 6px; border: none; font-size: 16px; }
-                input { background: #222; color: #fff; border: 1px solid #444; }
-                button { background: #ff0044; color: #fff; font-weight: bold; cursor: pointer; }
-                .panel-box { background: #1a1a1a; padding: 20px; border-radius: 10px; border: 1px solid #333; display: inline-block; margin-top: 10px; width: 90%; max-width: 400px; }
-            </style>
-        </head>
-        <body>
-            <h2>🛡️ Aviator Engine Control</h2>
-            <div class="panel-box">
-                <form action="/api/admin/control" method="POST">
-                    <input type="text" name="username" placeholder="Admin Username" required><br>
-                    <input type="password" name="password" placeholder="Admin Password" required><br>
-                    <input type="number" step="0.01" name="crashPoint" placeholder="Next Crash Point (e.g. 2.50)"><br>
-                    <input type="number" step="0.01" name="rtp" placeholder="Set RTP (e.g. 0.85 for 85%)"><br>
-                    <button type="submit">Execute Commands 🚀</button>
-                </form>
-            </div>
-        </body>
-        </html>
-    `);
-});
-
-app.post('/api/admin/control', (req, res) => {
-    const { username, password, crashPoint, rtp } = req.body;
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        if (crashPoint && parseFloat(crashPoint) >= 1.01) nextCrashPoint = parseFloat(crashPoint);
-        if (rtp && parseFloat(rtp) > 0 && parseFloat(rtp) <= 1) currentRTP = parseFloat(rtp);
-        res.send("<script>alert('Commands Executed Successfully!'); window.location.href='/secret-admin';</script>");
-    } else {
-        res.send("<script>alert('Invalid Admin Credentials!'); window.location.href='/secret-admin';</script>");
-    }
+            } else { res.json({ success: false, message: "Declined!" }); }
+        } catch (e) { res.json({ success: false, message: "Error!" }); }
+    } else { res.json({ success: false, message: "Invalid Cashout!" }); }
 });
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
-
-io.on("connection", (socket) => {
-    socket.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: isCrashed ? 1 : 0, history: crashHistory, players: livePlayersList });
-});
-
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => { startNewRound(); });
