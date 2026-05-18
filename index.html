@@ -421,62 +421,54 @@ function toggleTab(type) {
     if(autoPanel) autoPanel.style.display = (type === 'bet') ? 'none' : 'flex';
 }
 
+
+// index.html এর একদম নিচে থাকা সকেট লিসেনারটি হুবহু এটি দিয়ে প্রতিস্থাপন করুন:
+
 // 📊 লাইভ সকেট গেম আপডেট ও ডাইনামিক হিস্ট্রি লিসেনার
 socket.on("gameUpdate", (data) => {
     // ১. মেইন মাল্টিপ্লায়ার টেক্সট আপডেট
-    const multLabel = document.getElementById("multiplier-text") || document.getElementById("multiplier") || document.querySelector('.multiplier') || document.querySelector('.main-text b');
+    const multLabel = document.getElementById("multiplier-text") || document.getElementById("multiplier") || document.querySelector('.multiplier');
     if (multLabel && data.multiplier) {
         multLabel.innerText = data.multiplier + "x";
         currentMultiplier = parseFloat(data.multiplier);
     }
 
-    // 🎯 ২. গেম বক্সের ওপরের বেট হিস্ট্রি লাইন (Crash History Bubble Renderer)
-    const historyContainer = document.getElementById("history-container") || document.querySelector(".history-line") || document.querySelector(".stats-list") || document.getElementById("crash-history");
+    // 🎯 ২. বেট হিস্ট্রি বাবল রেন্ডারার (আপনার স্ক্রিনশটের ২১২ লাইনের 'history-box' আইডিতে সরাসরি কানেক্ট করা হলো)
+    const historyContainer = document.getElementById("history-box");
     if (historyContainer && data.history && Array.isArray(data.history)) {
-        historyContainer.innerHTML = ""; // পুরানো বাবলগুলো ক্লিয়ার করা হলো
+        historyContainer.innerHTML = ""; // পুরানো বাবল ক্লিয়ার করা হলো
         
-        // ব্যাকঅ্যান্ড থেকে আসা শেষ ৮টি ক্রাশ পয়েন্টকে সুন্দর রঙিন বাবলে রূপান্তর
-        data.history.slice(0, 8).forEach(val => {
+        // ব্যাকঅ্যান্ড থেকে আসা শেষ ১০টি ক্রাশ পয়েন্টকে সুন্দর রঙিন বাবলে রূপান্তর
+        data.history.slice(0, 10).forEach(val => {
             const bubble = document.createElement("span");
-            bubble.className = "history-bubble";
             bubble.innerText = val + "x";
             
-            // ক্যাসিনো নিয়মে মাল্টিপ্লায়ারের মান অনুযায়ী কালার কোড সেটআপ
+            // অফিশিয়াল এভিয়েটরের মতো মাল্টিপ্লায়ার অনুযায়ী এক্সক্লুসিভ কালার ও প্রিমিয়াম ডিজাইন
             let num = parseFloat(val);
             if (num < 1.20) {
-                bubble.style.cssText = "background: #1f2937; color: #60a5fa; border: 1px solid #3b82f6; padding: 3px 8px; margin: 0 4px; border-radius: 20px; font-weight: bold; font-size: 11px; display: inline-block;";
+                bubble.style.cssText = "background: #1e293b; color: #38bdf8; border: 1px solid #0369a1; padding: 4px 10px; margin: 0 4px; border-radius: 20px; font-weight: bold; font-size: 11px; font-family: sans-serif; display: inline-block;";
             } else if (num < 2.00) {
-                bubble.style.cssText = "background: #311557; color: #c084fc; border: 1px solid #a855f7; padding: 3px 8px; margin: 0 4px; border-radius: 20px; font-weight: bold; font-size: 11px; display: inline-block;";
+                bubble.style.cssText = "background: #2e1065; color: #c084fc; border: 1px solid #6b21a8; padding: 4px 10px; margin: 0 4px; border-radius: 20px; font-weight: bold; font-size: 11px; font-family: sans-serif; display: inline-block;";
             } else {
-                bubble.style.cssText = "background: #4c0519; color: #f43f5e; border: 1px solid #f43f5e; padding: 3px 8px; margin: 0 4px; border-radius: 20px; font-weight: bold; font-size: 11px; display: inline-block;";
+                bubble.style.cssText = "background: #881337; color: #fb7185; border: 1px solid #9f1239; padding: 4px 10px; margin: 0 4px; border-radius: 20px; font-weight: bold; font-size: 11px; font-family: sans-serif; display: inline-block;";
             }
             historyContainer.appendChild(bubble);
         });
     }
 
-    // সাউন্ড-সিঙ্ক করা লাইভ রিসেট প্রোটোকল
+    // সাউন্ড ও রিসেট প্রোটোকল
     if (data.is_crashed === 0) {
         isCrashed = false; 
-        if (currentMultiplier > 1.01) {
-            try { flySound.play(); } catch(e){}
-        }
+        if (currentMultiplier > 1.01) { try { flySound.play(); } catch(e){} }
     } else if (data.is_crashed === 1) {
         if (!isCrashed) {
             isCrashed = true;
             shakeTime = 15; 
-            
-            try {
-                flySound.pause();
-                flySound.currentTime = 0;
-                crashSound.play();
-            } catch(e){}
+            try { flySound.pause(); flySound.currentTime = 0; crashSound.play(); } catch(e){}
         }
         isBetting = false;
-        const btn = document.getElementById('btn-1') || document.querySelector('.bet-btn') || document.querySelector('button');
-        if (btn) {
-            btn.innerText = "BET";
-            btn.classList.remove('cashout');
-        }
+        const btn = document.getElementById('btn-1') || document.querySelector('.bet-btn');
+        if (btn) { btn.innerText = "BET"; btn.classList.remove('cashout'); }
         window.isProcessingBet = false;
     }
 });
@@ -487,3 +479,4 @@ if (canvas) {
 </script>
 </body>
 </html>
+        
