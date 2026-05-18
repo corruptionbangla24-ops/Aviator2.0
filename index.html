@@ -467,8 +467,7 @@
             }
         }
 
-
-        async function handleAction() {
+async function handleAction() {
     try { document.getElementById('s-click').play(); } catch(e){}
     const btn = document.getElementById('btn-1');
     const amtLabel = document.getElementById('amt-1');
@@ -483,7 +482,6 @@
 
     if (!urlUserId) {
         window.isProcessingBet = false;
-        console.log("Session Expired! Please re-login.");
         return;
     }
 
@@ -492,42 +490,24 @@
             const res = await fetch('/api/place-bet', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    amount: currentBetAmount,
-                    userId: urlUserId,
-                    wallet: urlWallet
-                })
+                body: JSON.stringify({ amount: currentBetAmount, userId: urlUserId, wallet: urlWallet })
             });
             const data = await res.json();
-            
-            // ক্যাশ মেমোরি রিসেট করা হলো
             window.isProcessingBet = false; 
             
             if (data.success) {
                 isBetting = true;
                 btn.innerText = "CASH OUT";
                 btn.classList.add('cashout');
-                
-                if (window.parent) {
-                    window.parent.postMessage({ action: "refresh_wallet" }, "*");
-                }
-            } else {
-                console.log(data.message || "Bet Declined!");
+                if (window.parent) { window.parent.postMessage({ action: "refresh_wallet" }, "*"); }
             }
-        } catch (e) { 
-            window.isProcessingBet = false;
-            console.error("Server Error!"); 
-        }
+        } catch (e) { window.isProcessingBet = false; }
     } else {
         try {
             const res = await fetch('/api/cash-out', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    amount: currentBetAmount,
-                    userId: urlUserId,
-                    wallet: urlWallet
-                })
+                body: JSON.stringify({ amount: currentBetAmount, userId: urlUserId, wallet: urlWallet })
             });
             const data = await res.json();
             window.isProcessingBet = false;
@@ -536,45 +516,32 @@
                 isBetting = false;
                 btn.innerText = "BET";
                 btn.classList.remove('cashout');
-                console.log("You Won: " + data.winAmount + " BDT");
-                
-                if (window.parent) {
-                    window.parent.postMessage({ action: "refresh_wallet" }, "*");
-                }
+                if (window.parent) { window.parent.postMessage({ action: "refresh_wallet" }, "*"); }
             }
-        } catch (e) { 
-            window.isProcessingBet = false;
-            console.error(e); 
-        }
+        } catch (e) { window.isProcessingBet = false; }
     }
 }
 
-function setAmt(val) {
-    document.getElementById('amt-1').innerText = val;
-    try { document.getElementById('s-click').play(); } catch(e){}
-}
+// 🎯 রুট ডিরেক্টরি অনুযায়ী ইমেজ সোর্স ইজি ও একুরেট করা হলো
+const planeImg = new Image(); planeImg.src = 'helicopter.png'; 
+const blastImg = new Image(); blastImg.src = 'explosion.png'; 
 
+function setAmt(val) { document.getElementById('amt-1').innerText = val; }
 function changeAmt(diff) {
     const amtLabel = document.getElementById('amt-1');
-    let current = parseInt(amtLabel.innerText);
-    current = Math.max(10, current + diff);
-    amtLabel.innerText = current;
-    try { document.getElementById('s-click').play(); } catch(e){}
+    let current = parseInt(amtLabel.innerText) || 10;
+    amtLabel.innerText = Math.max(10, current + diff);
 }
-
 function toggleTab(type) {
-    const autoPanel = document.getElementById('auto-settings-panel');
-    document.getElementById('tab-bet').classList.remove('active-tab');
-    document.getElementById('tab-auto').classList.remove('active-tab');
-
-    if (type === 'bet') {
-        document.getElementById('tab-bet').classList.add('active-tab');
-        autoPanel.style.display = 'none';
-    } else {
-        document.getElementById('tab-auto').classList.add('active-tab');
-        autoPanel.style.display = 'flex';
-    }
+    document.getElementById('tab-bet').classList.toggle('active-tab', type === 'bet');
+    document.getElementById('tab-auto').classList.toggle('active-tab', type === 'auto');
+    document.getElementById('auto-settings-panel').style.display = (type === 'bet') ? 'none' : 'flex';
 }
+const socket = io(); // ডাইনামিক সকেট রুট
 </script>
 </body>
 </html>
+
+            
+
+
