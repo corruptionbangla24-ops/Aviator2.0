@@ -268,25 +268,54 @@
             </table>
         </div>
     </div>
-
 <script src="/socket.io/socket.io.js"></script>
 <script>
-// 🎰 গেম কোর ভেরিয়েবল
-const socket = io(); // ডাইনামিক লাইভ সকেট কানেকশন রুট
+// 🎰 গেম কোর ও অ্যানিমেশন ভেরিয়েবল
+const socket = io(); 
 let isBetting = false;
-let isAutoBet = false;
+let isCrashed = false;
+let currentMultiplier = 1.00;
+
+// 🎨 ক্যানভাস গ্রাফিক্স রেন্ডারিং সেটআপ
+const canvas = document.getElementById('game-canvas') || document.querySelector('canvas');
+const ctx = canvas ? canvas.getContext('2d') : null;
 
 // 🎯 রুট ডিরেক্টরি অনুযায়ী হেলিকপ্টার ও বিস্ফোরণ ইমেজ পাথ ফিক্সড
-const planeImg = new Image(); 
-planeImg.src = 'helicopter.png'; 
-
-const blastImg = new Image(); 
-blastImg.src = 'explosion.png'; 
+const planeImg = new Image(); planeImg.src = 'helicopter.png'; 
+const blastImg = new Image(); blastImg.src = 'explosion.png'; 
 
 // 🛡️ ইউআরএল প্যারামিটার থেকে ইউজার আইডি এবং সিলেক্ট করা ওয়ালেট সংগ্রহ
 const urlParams = new URLSearchParams(window.location.search);
 const urlUserId = urlParams.get('userId') || urlParams.get('username') || "Roky123";
 const urlWallet = urlParams.get('wallet') || "main";
+
+// 🛫 বিমান ওড়ার রিয়েল-টাইম গ্রাফিক্স লুপ (এটি বিমানকে লাইভ আকাশে ওড়াবে)
+let planeX = 50;
+let planeY = canvas ? canvas.height - 80 : 200;
+
+function drawGame() {
+    if (!ctx || !canvas) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (!isCrashed) {
+        // বিমানের ওড়ার গতিপথ বা কার্ভ হিসাব
+        if (currentMultiplier > 1.00) {
+            planeX += 0.5;
+            planeY -= 0.4;
+            if (planeX > canvas.width - 100) planeX = canvas.width - 100;
+            if (planeY < 50) planeY = 50;
+        } else {
+            planeX = 50;
+            planeY = canvas.height - 80;
+        }
+        // লাল বিমান স্ক্রিনে আঁকা
+        ctx.drawImage(planeImg, planeX, planeY, 75, 50);
+    } else {
+        // ক্রাশ হলে বিস্ফোরণের ছবি শো করা
+        ctx.drawImage(blastImg, planeX, planeY, 80, 80);
+    }
+    requestAnimationFrame(drawGame);
+}
 
 // 🚀 বাজি ধরা এবং ক্যাশআউটের মেইন হ্যান্ডলার ফাংশন
 async function handleAction() {
@@ -295,13 +324,11 @@ async function handleAction() {
     const amtLabel = document.getElementById('amt-1');
     const currentBetAmount = parseInt(amtLabel.innerText);
 
-    // ডাবল-ক্লিক লক প্রোটোকল: বাজি প্রসেসিং চলাকালীন অতিরিক্ত ক্লিক ব্লক করবে
     if (window.isProcessingBet) return;
     window.isProcessingBet = true;
 
     if (!urlUserId) {
         window.isProcessingBet = false;
-        console.log("Session Expired! Please re-login.");
         return;
     }
 
@@ -310,86 +337,51 @@ async function handleAction() {
             const res = await fetch('/api/place-bet', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    amount: currentBetAmount,
-                    userId: urlUserId,
-                    wallet: urlWallet
-                })
+                body: JSON.stringify({ amount: currentBetAmount, userId: urlUserId, wallet: urlWallet })
             });
             const data = await res.json();
-            window.isProcessingBet = false; // প্রসেস লক অফ
+            window.isProcessingBet = false; 
             
             if (data.success) {
                 isBetting = true;
                 btn.innerText = "CASH OUT";
                 btn.classList.add('cashout');
-                
-                // 🔄 আইফ্রেম দেয়াল ভেঙে মেইন সাইটের ব্যালেন্স সাথে সাথে মাইনাস করার লাইভ সিগন্যাল
-                if (window.parent) {
-                    window.parent.postMessage({ action: "refresh_wallet" }, "*");
-                }
-            } else {
-                console.log(data.message || "Bet Declined!");
+                if (window.parent) { window.parent.postMessage({ action: "refresh_wallet" }, "*"); }
             }
-        } catch (e) { 
-            window.isProcessingBet = false;
-            console.error("Server Error!"); 
-        }
+        } catch (e) { window.isProcessingBet = false; }
     } else {
         try {
             const res = await fetch('/api/cash-out', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    amount: currentBetAmount,
-                    userId: urlUserId,
-                    wallet: urlWallet
-                })
+                body: JSON.stringify({ amount: currentBetAmount, userId: urlUserId, wallet: urlWallet })
             });
             const data = await res.json();
-            window.isProcessingBet = false; // প্রসেস লক অফ
+            window.isProcessingBet = false;
             
             if (data.success) {
                 isBetting = false;
                 btn.innerText = "BET";
                 btn.classList.remove('cashout');
-                console.log("You Won: " + data.winAmount + " BDT");
-                
-                // 🔄 জিতার পর মেইন সাইটের ব্যালেন্স প্লাস করার লাইভ সিগন্যাল
-                if (window.parent) {
-                    window.parent.postMessage({ action: "refresh_wallet" }, "*");
-                }
+                if (window.parent) { window.parent.postMessage({ action: "refresh_wallet" }, "*"); }
             }
-        } catch (e) { 
-            window.isProcessingBet = false;
-            console.error(e); 
-        }
+        } catch (e) { window.isProcessingBet = false; }
     }
 }
 
 // 💰 প্লাস-মাইনাস ও কাস্টম অ্যামাউন্ট বাটন ফাংশন
-function setAmt(val) {
-    document.getElementById('amt-1').innerText = val;
-    try { document.getElementById('s-click').play(); } catch(e){}
-}
-
+function setAmt(val) { document.getElementById('amt-1').innerText = val; }
 function changeAmt(diff) {
     const amtLabel = document.getElementById('amt-1');
     let current = parseInt(amtLabel.innerText) || 10;
-    current = Math.max(10, current + diff);
-    amtLabel.innerText = current;
-    try { document.getElementById('s-click').play(); } catch(e){}
+    amtLabel.innerText = Math.max(10, current + diff);
 }
 
 // 🔄 বেট ও অটো প্যানেল ট্যাব পরিবর্তনকারী ফাংশন
 function toggleTab(type) {
-    const autoPanel = document.getElementById('auto-settings-panel');
     document.getElementById('tab-bet').classList.toggle('active-tab', type === 'bet');
     document.getElementById('tab-auto').classList.toggle('active-tab', type === 'auto');
-    
-    if (autoPanel) {
-        autoPanel.style.display = (type === 'bet') ? 'none' : 'flex';
-    }
+    document.getElementById('auto-settings-panel').style.display = (type === 'bet') ? 'none' : 'flex';
 }
 
 // 📊 লাইভ সকেট গেম আপডেট লিসেনার
@@ -397,10 +389,13 @@ socket.on("gameUpdate", (data) => {
     const multLabel = document.getElementById("multiplier-text");
     if (multLabel && data.multiplier) {
         multLabel.innerText = data.multiplier + "x";
+        currentMultiplier = parseFloat(data.multiplier);
     }
 
-    // ক্রাশ বা রাউন্ড শেষ হওয়ার ট্র্যাকিং
-    if (data.is_crashed === 1) {
+    if (data.is_crashed === 0) {
+        isCrashed = false;
+    } else if (data.is_crashed === 1) {
+        isCrashed = true;
         isBetting = false;
         const btn = document.getElementById('btn-1');
         if (btn) {
@@ -410,7 +405,12 @@ socket.on("gameUpdate", (data) => {
         window.isProcessingBet = false;
     }
 });
+
+// ক্যানভাস রেন্ডারিং চালু করা
+if (canvas) {
+    planeImg.onload = () => { drawGame(); };
+}
 </script>
 </body>
 </html>
-                                
+
