@@ -289,48 +289,49 @@ const urlWallet = urlParams.get('wallet') || "main";
 
 // index.html এর function drawGame() অংশটি হুবহু এটি দিয়ে প্রতিস্থাপন করুন:
 
-let planeX = 10;
-let planeY = canvas ? canvas.height - 40 : 200;
+let planeX = 0;
+let planeY = canvas ? canvas.height : 200;
+let shakeTime = 0; 
 
 function drawGame() {
     if (!ctx || !canvas) return;
     
-    // প্রতি ফ্রেমে ক্যানভাস সম্পূর্ণ ক্লিন করা হচ্ছে
+    // প্রতি ফ্রেমে ক্যানভাস সম্পূর্ণ ক্লিয়ার করা হচ্ছে
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // 🎯 ১. বামদিকের একদম নিচের কর্নার (রানওয়ে) এবং সর্বোচ্চ ওড়ার সীমানা লক
-    const startX = 20;                      // একদম বামের মার্জিন
-    const startY = canvas.height - 40;       // একদম নিচের মার্জিন
-    const endX = canvas.width - 90;          // ডানের সর্বোচ্চ সীমানা (যাতে বক্স ক্রস না করে)
-    const endY = 60;                         // ওপরের সর্বোচ্চ সীমানা
+    // 🎯 ১. একদম বামদিকের নিচের কর্নার (0,0 গ্রাফ পজিশন) লক করা হলো
+    const startX = 5;                        // বাম দিকের একদম শেষ সীমানা
+    const startY = canvas.height - 5;        // নিচের দেয়ালের একদম শেষ সীমানা (বক্সের ভেতরের কর্নার)
+    const endX = canvas.width - 85;          // ডানের সর্বোচ্চ সেফ সীমানা
+    const endY = 55;                         // ওপরের সর্বোচ্চ সেফ সীমানা
     
     // মাল্টিপ্লায়ার বৃদ্ধির ওপর ভিত্তি করে ওড়ার প্রোগ্রেস (স্মুথ ০ থেকে ১ রেশিও)
-    let progress = Math.min(1, (currentMultiplier - 1.00) / 5.00); 
+    let progress = Math.min(1, (currentMultiplier - 1.00) / 4.50); 
     
     if (!isCrashed) {
-        // 🎯 ২. প্যারাবোলিক গ্রাফ ইকুয়েশন: এটি বিমানকে নিচ থেকে কার্ভ লাইনে ওপরে তুলবে
+        // 🎯 ২. একুরেট কার্ভ পজিশনিং লজিক (যা আপনার ড্রয়িং লাইনের সাথে হুবহু মিলবে)
         planeX = startX + (endX - startX) * progress;
-        planeY = startY - (startY - endY) * Math.pow(progress, 2); // স্মুথ ওড়ার কার্ভ লজিক
+        planeY = startY - (startY - endY) * Math.pow(progress, 1.8); // স্মুথ প্যারা বোলা মোশন
         
-        // 🎯 ৩. হেলিকপ্টারের পেছনের লাল অ্যাভিয়েশন প্রোগ্রেস লাইন আঁকা
+        // 🎯 ৩. হেলিকপ্টারের পেছনের লাল কার্ভ লাইন ড্রয়িং (যা একদম কর্নার থেকে স্টার্ট হবে)
         ctx.beginPath();
-        ctx.strokeStyle = '#ff003f'; // লাল রঙ
-        ctx.lineWidth = 4;           // লাইনের পুরুত্ব
+        ctx.strokeStyle = '#ff003f'; // আকর্ষণীয় গাঢ় লাল রঙ
+        ctx.lineWidth = 5;           // লাইনের উজ্জ্বল পুরুত্ব
         ctx.moveTo(startX, startY);
         
-        // কার্ভ লাইনটি ধাপে ধাপে আঁকার লুপ
+        // নিখুঁত লাইন কার্ভ তৈরি করার লুপ
         for (let i = 0; i <= progress * 100; i++) {
             let t = i / 100;
             let lx = startX + (endX - startX) * t;
-            let ly = startY - (startY - endY) * Math.pow(t, 2);
+            let ly = startY - (startY - endY) * Math.pow(t, 1.8);
             ctx.lineTo(lx, ly);
         }
         ctx.stroke();
         
-        // 🚁 হেলিকপ্টারটি স্ক্রিনে ড্র করা হলো (সাইজ কিছুটা ছোট করে নিখুঁত করা হয়েছে)
-        ctx.drawImage(planeImg, planeX - 20, planeY - 20, 60, 40);
+        // 🚁 হেলিকপ্টার ড্রয়িং (কার্ভ লাইনের ঠিক ওপরে সুন্দরভাবে বসে সামনে আগাবে)
+        ctx.drawImage(planeImg, planeX - 25, planeY - 25, 65, 42);
     } else {
-        // 💥 বিস্ফোরণ বা ক্রাশ ইফেক্ট
+        // 💥 বিস্ফোরণ বা স্ক্রিন শেক ইফেক্ট
         ctx.save();
         if (shakeTime > 0) {
             let dx = (Math.random() - 0.5) * 6;
