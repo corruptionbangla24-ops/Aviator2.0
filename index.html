@@ -287,62 +287,64 @@ const urlParams = new URLSearchParams(window.location.search);
 const urlUserId = urlParams.get('userId') || urlParams.get('username') || "Roky123";
 const urlWallet = urlParams.get('wallet') || "main";
 
-// 🛫 ক্যানভাস বাউন্ডারি এবং কার্ভ ট্র্যাকিং ভেরিয়েবল
-let planeX = 0;
-let planeY = 0;
-let shakeTime = 0; 
+// index.html এর function drawGame() অংশটি হুবহু এটি দিয়ে প্রতিস্থাপন করুন:
+
+let planeX = 10;
+let planeY = canvas ? canvas.height - 40 : 200;
 
 function drawGame() {
     if (!ctx || !canvas) return;
     
-    // ক্যানভাস রিসেট ও ব্যাকগ্রাউন্ড ক্লিনআপ
+    // প্রতি ফ্রেমে ক্যানভাস সম্পূর্ণ ক্লিন করা হচ্ছে
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // ক্যানভাস সাইজের ওপর ভিত্তি করে সেফটি বাউন্ডারি বা বক্স সীমানা লক করা
-    const startX = 60;
-    const startY = canvas.height - 70;
-    const endX = canvas.width - 120;
-    const endY = 80;
+    // 🎯 ১. বামদিকের একদম নিচের কর্নার (রানওয়ে) এবং সর্বোচ্চ ওড়ার সীমানা লক
+    const startX = 20;                      // একদম বামের মার্জিন
+    const startY = canvas.height - 40;       // একদম নিচের মার্জিন
+    const endX = canvas.width - 90;          // ডানের সর্বোচ্চ সীমানা (যাতে বক্স ক্রস না করে)
+    const endY = 60;                         // ওপরের সর্বোচ্চ সীমানা
     
-    // ডাইনামিক মাল্টিপ্লায়ার অনুযায়ী হেলিকপ্টারের এক্স-ওয়াই এক্সিস হিসাব
-    let progress = Math.min(1, (currentMultiplier - 1.00) / 4.00); 
+    // মাল্টিপ্লায়ার বৃদ্ধির ওপর ভিত্তি করে ওড়ার প্রোগ্রেস (স্মুথ ০ থেকে ১ রেশিও)
+    let progress = Math.min(1, (currentMultiplier - 1.00) / 5.00); 
     
     if (!isCrashed) {
+        // 🎯 ২. প্যারাবোলিক গ্রাফ ইকুয়েশন: এটি বিমানকে নিচ থেকে কার্ভ লাইনে ওপরে তুলবে
         planeX = startX + (endX - startX) * progress;
-        planeY = startY - (startY - endY) * Math.pow(progress, 1.5);
+        planeY = startY - (startY - endY) * Math.pow(progress, 2); // স্মুথ ওড়ার কার্ভ লজিক
         
-        // বিমানের পেছনের রেড অ্যাভিয়েশন গ্রাফ লাইন ড্রয়িং (Line Curve)
+        // 🎯 ৩. হেলিকপ্টারের পেছনের লাল অ্যাভিয়েশন প্রোগ্রেস লাইন আঁকা
         ctx.beginPath();
-        ctx.strokeStyle = '#ff003f';
-        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#ff003f'; // লাল রঙ
+        ctx.lineWidth = 4;           // লাইনের পুরুত্ব
         ctx.moveTo(startX, startY);
         
+        // কার্ভ লাইনটি ধাপে ধাপে আঁকার লুপ
         for (let i = 0; i <= progress * 100; i++) {
             let t = i / 100;
             let lx = startX + (endX - startX) * t;
-            let ly = startY - (startY - endY) * Math.pow(t, 1.5);
+            let ly = startY - (startY - endY) * Math.pow(t, 2);
             ctx.lineTo(lx, ly);
         }
         ctx.stroke();
         
-        // হেলিকপ্টার ড্রয়িং
-        ctx.drawImage(planeImg, planeX - 25, planeY - 25, 70, 45);
+        // 🚁 হেলিকপ্টারটি স্ক্রিনে ড্র করা হলো (সাইজ কিছুটা ছোট করে নিখুঁত করা হয়েছে)
+        ctx.drawImage(planeImg, planeX - 20, planeY - 20, 60, 40);
     } else {
-        // আল্ট্রা-স্মুথ বিস্ফোরণ ও স্ক্রিন শেক (Shake Effect)
+        // 💥 বিস্ফোরণ বা ক্রাশ ইফেক্ট
         ctx.save();
         if (shakeTime > 0) {
-            let dx = (Math.random() - 0.5) * 8;
-            let dy = (Math.random() - 0.5) * 8;
+            let dx = (Math.random() - 0.5) * 6;
+            let dy = (Math.random() - 0.5) * 6;
             ctx.translate(dx, dy);
             shakeTime--;
         }
-        // বিস্ফোরণের ছবি ড্র করা হলো
-        ctx.drawImage(blastImg, planeX - 40, planeY - 40, 90, 90);
+        ctx.drawImage(blastImg, planeX - 35, planeY - 35, 80, 80);
         ctx.restore();
     }
     
     requestAnimationFrame(drawGame);
 }
+
 
 // 🚀 বাজি ধরা এবং ক্যাশআউটের মেইন হ্যান্ডলার ফাংশন
 async function handleAction() {
