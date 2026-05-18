@@ -11,27 +11,24 @@ const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 🎯 ইমেজ ও অডিও ফাইল সরাসরি রুট ফোল্ডার থেকে ব্রাউজারে লাইভ শো করানোর গেটওয়ে
+// 🎯 রুট ডিরেক্টরি হোস্টিং ফিক্সড
 app.use(express.static(__dirname));
 app.use('/*.png', express.static(__dirname));
 app.use('/*.mp3', express.static(__dirname));
 
-// 🔗 আপনার মূল পিএইচপি সাইটের একদম লাইভ এবং একুরেট ডোমেইন লিঙ্ক
-const MAIN_SITE_URL = "https://betlover247.onrender.com"; 
+const MAIN_SITE_URL = "https://onrender.com"; 
 
-// গেম কোর ভেরিয়েবল
 let currentMultiplier = 1.00;
 let isCrashed = false;
 let gameInterval = null;
 let activeBets = {}; 
-let crashHistory = ["1.50", "2.80", "1.05", "4.20", "1.90"];
+let crashHistory = ["1.50", "2.10", "1.12", "5.40"];
 let livePlayersList = [];
 
-// লাইভ ডাইনামিক বোট প্লেয়ার জেনারেটর (গেম স্ক্রিন সচল রাখার জন্য)
-const fakeNames = ["Raza_Aviator", "Pilot_BD", "SkyBet", "King_77", "Roni_Boss", "Sabbir_01", "Nisha_Fly", "BetMaster"];
+const fakeNames = ["Aviator_King", "Roni_BD", "SkyWalker", "Jackpot_77", "Pilot_Kamal", "BetMaster", "CryptoFly"];
 function generateFakePlayers() {
     livePlayersList = [];
-    let count = Math.floor(Math.random() * 4) + 3; 
+    let count = Math.floor(Math.random() * 3) + 3; 
     for (let i = 0; i < count; i++) {
         let name = fakeNames[Math.floor(Math.random() * fakeNames.length)] + "_" + Math.floor(Math.random() * 800 + 100);
         let bet = (Math.floor(Math.random() * 10 + 1) * 50); 
@@ -40,20 +37,20 @@ function generateFakePlayers() {
     }
 }
 
-// 🚀 মূল গেম লুপ ইঞ্জিন (যা ১.০০x লকিং সমস্যা চিরতরে দূর করবে)
+// 🛫 ডাইনামিক লাইভ লুপ ইঞ্জিন (যা ১.০০x এ লকিং হওয়া চিরতরে বন্ধ করবে)
 function startNewRound() {
-    clearInterval(gameInterval); // পুরানো ইন্টারভাল মেমোরি সম্পূর্ণ ক্লিয়ার
+    if (gameInterval) clearInterval(gameInterval); // লুপ লক বাইপাস প্রোটেকশন
+    
     currentMultiplier = 1.00;
     isCrashed = false;
     activeBets = {}; 
     generateFakePlayers();
 
-    // প্রতি ৫০ মিলি-সেকেন্ডে বিমান ওড়ার গতি হিসাব করার টাইমার লুপ
+    // প্রতি ৫০ মিলি-সেকেন্ডে সকেটে তাজা ওড়ার ডেটা পাস করার রিয়েল-টাইম কাউন্টডাউন
     gameInterval = setInterval(() => {
         if (!isCrashed) {
-            currentMultiplier += (currentMultiplier < 2.00) ? 0.01 : 0.05;
+            currentMultiplier += 0.01; // বিমান ওড়ার মোশন স্পিড
 
-            // বোট প্লেয়ারদের অটো-ক্যাশআউট ট্র্যাকিং
             livePlayersList.forEach(player => {
                 if (!player.isCashedOut && currentMultiplier >= player.targetMultiplier) {
                     player.isCashedOut = true;
@@ -61,7 +58,7 @@ function startNewRound() {
                 }
             });
 
-            // ব্রাউজারে লাইভ ওড়ার সিগন্যাল ফরোয়ার্ড
+            // ব্রাউজারে লাইভ সিগন্যাল পাঠানো হচ্ছে
             io.emit("gameUpdate", {
                 multiplier: currentMultiplier.toFixed(2),
                 is_crashed: 0,
@@ -69,73 +66,48 @@ function startNewRound() {
                 players: livePlayersList
             });
 
-            // ডাইনামিক র্যান্ডম ক্রাশ পয়েন্ট কন্ডিশন (১.০৫x থেকে শুরু করে র্যান্ডমলি ক্রাশ খাবে)
-            if (currentMultiplier >= (Math.random() * 12 + 1.05)) {
+            // র্যান্ডমলি ক্রাশ হওয়ার পয়েন্ট জেনারেটর কন্ডিশন
+            if (currentMultiplier >= (Math.random() * 10 + 1.05)) {
                 triggerCrash();
             }
         }
     }, 50);
 }
 
-// 💥 ক্রাশ বা হেলিকপ্টার বিস্ফোরণ লজিক
 function triggerCrash() {
-    clearInterval(gameInterval);
+    if (gameInterval) clearInterval(gameInterval);
     isCrashed = true;
     crashHistory.unshift(currentMultiplier.toFixed(2));
-    if (crashHistory.length > 8) crashHistory.pop(); 
+    if (crashHistory.length > 10) crashHistory.pop(); 
 
-    // যারা ক্যাশআউট করতে পারেনি তাদের লস সিগন্যাল পিএইচপিতে পাঠানো
     Object.keys(activeBets).forEach(async (uid) => {
         if (activeBets[uid] && !activeBets[uid].cashedOut) {
             try { 
-                await axios.post(MAIN_SITE_URL + '/api_callback.php', { 
-                    action: "loss", 
-                    username: uid, 
-                    game_name: "Aviator" 
-                }); 
-            } catch(e){ console.log("PHP connection sleep"); }
+                await axios.post(MAIN_SITE_URL + '/api_callback.php', { action: "loss", username: uid, game_name: "Aviator" }); 
+            } catch(e){}
         }
     });
 
-    // ব্রাউজার স্ক্রিনে ক্রাশ সিগন্যাল পাঠানো
-    io.emit("gameUpdate", { 
-        multiplier: currentMultiplier.toFixed(2), 
-        is_crashed: 1, 
-        history: crashHistory, 
-        players: livePlayersList 
-    });
-
-    // ⏳ পরবর্তী রাউন্ড শুরু হতে ঠিক ৭ সেকেন্ড বিরতি (টাইমার কাউন্টডাউন)
+    // স্ক্রিনে ক্রাশ হওয়া এবং বিস্ফোরণ ঘটানোর সিগন্যাল
+    io.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: 1, history: crashHistory, players: livePlayersList });
+    
+    // ⏳ রাউন্ড শেষ হওয়ার পর ৭ সেকেন্ডের টাইমার কাউন্টডাউন বিরতি
     setTimeout(() => { startNewRound(); }, 7000);
 }
 
-// 🎰 ১. বাজি ধরার রাউট গেটওয়ে
 app.post('/api/place-bet', async (req, res) => {
     const { amount, userId, wallet } = req.body;
-    if (currentMultiplier > 1.02 && !isCrashed) { 
-        return res.json({ success: false, message: "Started" }); 
-    }
+    if (currentMultiplier > 1.02 && !isCrashed) { return res.json({ success: false, message: "Started" }); }
 
     try {
-        const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', { 
-            action: "bet", 
-            username: userId, 
-            amount: parseFloat(amount), 
-            wallet: wallet 
-        });
-        
+        const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', { action: "bet", username: userId, amount: parseFloat(amount), wallet: wallet });
         if (response.data && response.data.status === "ok") {
             activeBets[userId] = { amount: parseFloat(amount), cashedOut: false };
             res.json({ success: true, balance: response.data.balance });
-        } else { 
-            res.json({ success: false, message: response.data.message || "Declined!" }); 
-        }
-    } catch (e) { 
-        res.json({ success: false, message: "Timeout!" }); 
-    }
+        } else { res.json({ success: false, message: response.data.message || "Declined!" }); }
+    } catch (e) { res.json({ success: false, message: "Timeout!" }); }
 });
 
-// 💰 ২. ক্যাশআউট বা জেতার রাউট গেটওয়ে
 app.post('/api/cash-out', async (req, res) => {
     const { userId, amount, wallet } = req.body;
     let targetBet = amount || (activeBets[userId] ? activeBets[userId].amount : 0);
@@ -143,30 +115,17 @@ app.post('/api/cash-out', async (req, res) => {
     if (!isCrashed && targetBet > 0 && activeBets[userId] && !activeBets[userId].cashedOut) {
         let winAmount = targetBet * currentMultiplier;
         try {
-            const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', { 
-                action: "win", 
-                username: userId, 
-                amount: parseFloat(winAmount.toFixed(2)), 
-                wallet: wallet 
-            });
-            
+            const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', { action: "win", username: userId, amount: parseFloat(winAmount.toFixed(2)), wallet: wallet });
             if (response.data && response.data.status === "ok") {
                 activeBets[userId].cashedOut = true;
                 res.json({ success: true, winAmount: winAmount.toFixed(2), balance: response.data.balance });
-            } else { 
-                res.json({ success: false, message: "Declined!" }); 
-            }
-        } catch (e) { 
-            res.json({ success: false, message: "Error!" }); 
-        }
-    } else { 
-        res.json({ success: false, message: "Invalid Cashout!" }); 
-    }
+            } else { res.json({ success: false, message: "Declined!" }); }
+        } catch (e) { res.json({ success: false, message: "Error!" }); }
+    } else { res.json({ success: false, message: "Invalid Cashout!" }); }
 });
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
-// সকেট আইও কানেকশন ইভেন্ট লিসেনার
 io.on("connection", (socket) => {
     socket.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: isCrashed ? 1 : 0, history: crashHistory, players: livePlayersList });
 });
