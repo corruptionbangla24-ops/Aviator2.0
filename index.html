@@ -268,7 +268,8 @@
             </table>
         </div>
     </div>
-<script src="/socket.io/socket.io.js"></script>
+
+    <script src="/socket.io/socket.io.js"></script>
 <script>
 // 🎰 গেম কোর ও ক্যানভাস মোশন ভেরিয়েবল
 const socket = io(); 
@@ -276,50 +277,49 @@ let isBetting = false;
 let isCrashed = false;
 let currentMultiplier = 1.00;
 
-const canvas = document.getElementById('game-canvas') || document.querySelector('canvas') || document.getElementsByTagName('canvas')[0];
+const canvas = document.getElementById('game-canvas') || document.querySelector('canvas') || document.getElementsByTagName('canvas');
 const ctx = canvas ? canvas.getContext('2d') : null;
 
 // 🖼️ ইমেজ সোর্স লোডার
 const planeImg = new Image(); planeImg.src = 'helicopter.png'; 
 const blastImg = new Image(); blastImg.src = 'explosion.png'; 
 
+// 🎯 সাউন্ড ইঞ্জিন ফিক্সড: আপনার গিটহাবের আসল ফাইলের নামের সাথে হুবহু মিল করা হলো
+const betSound = new Audio('click.mp3');       
+const flySound = new Audio('helicopter.mp3');  // 🛫 flying.mp3 কেটে আপনার helicopter.mp3 করা হলো
+const crashSound = new Audio('crash.mp3');     // 💥 explosion.mp3 কেটে আপনার crash.mp3 করা হলো
+
+flySound.loop = true; // ওড়ার সাউন্ড অনবরত লুপে বাজবে
+
 const urlParams = new URLSearchParams(window.location.search);
 const urlUserId = urlParams.get('userId') || urlParams.get('username') || "Roky123";
 const urlWallet = urlParams.get('wallet') || "main";
 
-// index.html এর function drawGame() অংশটি হুবহু এটি দিয়ে প্রতিস্থাপন করুন:
-
+// ক্যানভাস বাউন্ডারি এবং কার্ভ ট্র্যাকিং ভেরিয়েবল
 let planeX = 0;
 let planeY = canvas ? canvas.height : 200;
 let shakeTime = 0; 
 
 function drawGame() {
     if (!ctx || !canvas) return;
-    
-    // প্রতি ফ্রেমে ক্যানভাস সম্পূর্ণ ক্লিয়ার করা হচ্ছে
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // একদম বামদিকের নিচের কর্নার (0,0 গ্রাফ পজিশন)
     const startX = 5;                        
     const startY = canvas.height - 5;        
     const endX = canvas.width - 95;          
     const endY = 65;                         
     
-    // গতি সিঙ্ক মেকানিজম
     let progress = Math.min(1, (currentMultiplier - 1.00) / 1.80); 
     
     if (!isCrashed) {
-        // একুরেট কার্ভ পজিশনিং লজিক
         planeX = startX + (endX - startX) * progress;
         planeY = startY - (startY - endY) * Math.pow(progress, 1.2); 
         
-        // হেলিকপ্টারের পেছনের লাল কার্ভ লাইন ড্রয়িং
         ctx.beginPath();
         ctx.strokeStyle = '#ff003f'; 
         ctx.lineWidth = 5;           
         ctx.moveTo(startX, startY);
         
-        // নিখুঁত লাইন কার্ভ তৈরি করার লুপ
         for (let i = 0; i <= progress * 100; i++) {
             let t = i / 100;
             let lx = startX + (endX - startX) * t;
@@ -328,11 +328,8 @@ function drawGame() {
         }
         ctx.stroke();
         
-        // 🚁 🎯 গ্যাপ ফিক্সড: planeX এবং planeY এর অফসেট পরিবর্তন করা হলো (-৫২ এবং -৪০ করা হয়েছে)
-        // এর ফলে লাল লাইনের শেষ মাথাটি একদম নিখুঁতভাবে হেলিকপ্টারের পেছনের অংশে লেগে থাকবে
         ctx.drawImage(planeImg, planeX - 52, planeY - 40, 85, 55);
     } else {
-        // 💥爆炸 বা স্ক্রিন শেক ইফেক্ট
         ctx.save();
         if (shakeTime > 0) {
             let dx = (Math.random() - 0.5) * 6;
@@ -343,12 +340,8 @@ function drawGame() {
         ctx.drawImage(blastImg, planeX - 45, planeY - 45, 100, 100);
         ctx.restore();
     }
-    
     requestAnimationFrame(drawGame);
 }
-
-
-
 
 // 🚀 বাজি ধরা এবং ক্যাশআউটের মেইন হ্যান্ডলার ফাংশন
 async function handleAction() {
@@ -376,6 +369,10 @@ async function handleAction() {
                 isBetting = true;
                 btn.innerText = "CASH OUT";
                 btn.classList.add('cashout');
+                
+                // 🔊 বাজি সফল হলে ক্লিকের সাউন্ড বাজবে
+                try { betSound.play(); } catch(e){}
+                
                 if (window.parent) { window.parent.postMessage({ action: "refresh_wallet" }, "*"); }
             }
         } catch (e) { window.isProcessingBet = false; }
@@ -393,6 +390,10 @@ async function handleAction() {
                 isBetting = false;
                 btn.innerText = "BET";
                 btn.classList.remove('cashout');
+                
+                // 🔊 ক্যাশআউট সফল হলে ক্লিকের সাউন্ড বাজবে
+                try { betSound.play(); } catch(e){}
+                
                 if (window.parent) { window.parent.postMessage({ action: "refresh_wallet" }, "*"); }
             }
         } catch (e) { window.isProcessingBet = false; }
@@ -422,20 +423,30 @@ function toggleTab(type) {
 
 // 📊 লাইভ সকেট গেম আপডেট লিসেনার
 socket.on("gameUpdate", (data) => {
-    // 🎯 ইউনিভার্সিটি আইডি ট্র্যাকার: থিমের ভেতরের সম্ভাব্য সব নামের টেক্সট এলিমেন্ট এক ক্লিকে আপডেট করবে
     const multLabel = document.getElementById("multiplier-text") || document.getElementById("multiplier") || document.querySelector('.multiplier') || document.querySelector('.main-text b');
     if (multLabel && data.multiplier) {
         multLabel.innerText = data.multiplier + "x";
         currentMultiplier = parseFloat(data.multiplier);
     }
 
-    // ডাইনামিক লাইভ রিসেট প্রোটোকল
+    // 🎯 সাউন্ড-সিঙ্ক করা লাইভ রিসেট প্রোটোকল
     if (data.is_crashed === 0) {
         isCrashed = false; 
+        // 🛫 হেলিকপ্টার ১.০১x এর ওপরে গেলেই ব্যাকগ্রাউন্ড ওড়ার শব্দ শুরু হবে
+        if (currentMultiplier > 1.01) {
+            try { flySound.play(); } catch(e){}
+        }
     } else if (data.is_crashed === 1) {
         if (!isCrashed) {
             isCrashed = true;
             shakeTime = 15; 
+            
+            // 💥 ক্রাশ হওয়ার সাথে সাথে ওড়ার শব্দ স্টপ হয়ে বিস্ফোরণের শব্দ বাস্ট হবে
+            try {
+                flySound.pause();
+                flySound.currentTime = 0;
+                crashSound.play();
+            } catch(e){}
         }
         isBetting = false;
         const btn = document.getElementById('btn-1') || document.querySelector('.bet-btn') || document.querySelector('button');
@@ -447,11 +458,11 @@ socket.on("gameUpdate", (data) => {
     }
 });
 
-// গ্রাফিক্স ইঞ্জিন চালু করা হলো
 if (canvas) {
     planeImg.onload = () => { drawGame(); };
-    blastImg.onload = () => { if(isCrashed) drawGame(); };
 }
 </script>
 </body>
 </html>
+    
+
