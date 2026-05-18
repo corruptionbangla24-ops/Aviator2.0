@@ -302,19 +302,18 @@ function drawGame() {
     // একদম বামদিকের নিচের কর্নার (0,0 গ্রাফ পজিশন)
     const startX = 5;                        
     const startY = canvas.height - 5;        
-    const endX = canvas.width - 85;          
-    const endY = 55;                         
+    const endX = canvas.width - 95;          // সাইজ বড় করায় সেফটি বাউন্ডারি কিছুটা কমানো হলো
+    const endY = 65;                         
     
-    // 🎯 গতি সিঙ্ক ফিক্সড: ডিভাইডার কমিয়ে ১.৮০ করা হলো যাতে সংখ্যা বাড়ার সাথে সাথে বিমানটি দ্রুত আগে বাগে আগায়
+    // গতি সিঙ্ক মেকানিজম
     let progress = Math.min(1, (currentMultiplier - 1.00) / 1.80); 
     
     if (!isCrashed) {
-        // ১. একুরেট কার্ভ পজিশনিং লজিক
+        // একুরেট কার্ভ পজিশনিং লজিক
         planeX = startX + (endX - startX) * progress;
-        // ২. কার্ভের বাঁক আরও মসৃণ ও সমান্তরাল করা হলো (Math.pow কমিয়ে 1.2 করা হলো)
         planeY = startY - (startY - endY) * Math.pow(progress, 1.2); 
         
-        // ৩. হেলিকপ্টারের পেছনের লাল কার্ভ লাইন ড্রয়িং
+        // হেলিকপ্টারের পেছনের লাল কার্ভ লাইন ড্রয়িং
         ctx.beginPath();
         ctx.strokeStyle = '#ff003f'; 
         ctx.lineWidth = 5;           
@@ -329,10 +328,10 @@ function drawGame() {
         }
         ctx.stroke();
         
-        // 🚁 হেলিকপ্টার ড্রয়িং
-        ctx.drawImage(planeImg, planeX - 25, planeY - 25, 65, 42);
+        // 🚁 🎯 হেলিকপ্টার ড্রয়িং: সাইজ বাড়িয়ে প্রস্থ ৮৫ এবং উচ্চতা ৫৫ পিক্সেল করা হলো (আগে ৬৫x৪২ ছিল)
+        ctx.drawImage(planeImg, planeX - 35, planeY - 35, 85, 55);
     } else {
-        // 💥 বিস্ফোরণ বা স্ক্রিন শেক ইফেক্ট
+        // 💥 বিস্ফোরণ বা স্ক্রিন শেক ইফেক্ট (বিস্ফোরণের সাইজও আনুপাতিকভাবে বড় করা হয়েছে)
         ctx.save();
         if (shakeTime > 0) {
             let dx = (Math.random() - 0.5) * 6;
@@ -340,7 +339,7 @@ function drawGame() {
             ctx.translate(dx, dy);
             shakeTime--;
         }
-        ctx.drawImage(blastImg, planeX - 35, planeY - 35, 80, 80);
+        ctx.drawImage(blastImg, planeX - 45, planeY - 45, 100, 100);
         ctx.restore();
     }
     
