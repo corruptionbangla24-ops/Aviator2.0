@@ -299,36 +299,37 @@ function drawGame() {
     // প্রতি ফ্রেমে ক্যানভাস সম্পূর্ণ ক্লিয়ার করা হচ্ছে
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // 🎯 ১. একদম বামদিকের নিচের কর্নার (0,0 গ্রাফ পজিশন) লক করা হলো
-    const startX = 5;                        // বাম দিকের একদম শেষ সীমানা
-    const startY = canvas.height - 5;        // নিচের দেয়ালের একদম শেষ সীমানা (বক্সের ভেতরের কর্নার)
-    const endX = canvas.width - 85;          // ডানের সর্বোচ্চ সেফ সীমানা
-    const endY = 55;                         // ওপরের সর্বোচ্চ সেফ সীমানা
+    // একদম বামদিকের নিচের কর্নার (0,0 গ্রাফ পজিশন)
+    const startX = 5;                        
+    const startY = canvas.height - 5;        
+    const endX = canvas.width - 85;          
+    const endY = 55;                         
     
-    // মাল্টিপ্লায়ার বৃদ্ধির ওপর ভিত্তি করে ওড়ার প্রোগ্রেস (স্মুথ ০ থেকে ১ রেশিও)
-    let progress = Math.min(1, (currentMultiplier - 1.00) / 4.50); 
+    // 🎯 গতি সিঙ্ক ফিক্সড: ডিভাইডার কমিয়ে ১.৮০ করা হলো যাতে সংখ্যা বাড়ার সাথে সাথে বিমানটি দ্রুত আগে বাগে আগায়
+    let progress = Math.min(1, (currentMultiplier - 1.00) / 1.80); 
     
     if (!isCrashed) {
-        // 🎯 ২. একুরেট কার্ভ পজিশনিং লজিক (যা আপনার ড্রয়িং লাইনের সাথে হুবহু মিলবে)
+        // ১. একুরেট কার্ভ পজিশনিং লজিক
         planeX = startX + (endX - startX) * progress;
-        planeY = startY - (startY - endY) * Math.pow(progress, 1.8); // স্মুথ প্যারা বোলা মোশন
+        // ২. কার্ভের বাঁক আরও মসৃণ ও সমান্তরাল করা হলো (Math.pow কমিয়ে 1.2 করা হলো)
+        planeY = startY - (startY - endY) * Math.pow(progress, 1.2); 
         
-        // 🎯 ৩. হেলিকপ্টারের পেছনের লাল কার্ভ লাইন ড্রয়িং (যা একদম কর্নার থেকে স্টার্ট হবে)
+        // ৩. হেলিকপ্টারের পেছনের লাল কার্ভ লাইন ড্রয়িং
         ctx.beginPath();
-        ctx.strokeStyle = '#ff003f'; // আকর্ষণীয় গাঢ় লাল রঙ
-        ctx.lineWidth = 5;           // লাইনের উজ্জ্বল পুরুত্ব
+        ctx.strokeStyle = '#ff003f'; 
+        ctx.lineWidth = 5;           
         ctx.moveTo(startX, startY);
         
         // নিখুঁত লাইন কার্ভ তৈরি করার লুপ
         for (let i = 0; i <= progress * 100; i++) {
             let t = i / 100;
             let lx = startX + (endX - startX) * t;
-            let ly = startY - (startY - endY) * Math.pow(t, 1.8);
+            let ly = startY - (startY - endY) * Math.pow(t, 1.2);
             ctx.lineTo(lx, ly);
         }
         ctx.stroke();
         
-        // 🚁 হেলিকপ্টার ড্রয়িং (কার্ভ লাইনের ঠিক ওপরে সুন্দরভাবে বসে সামনে আগাবে)
+        // 🚁 হেলিকপ্টার ড্রয়িং
         ctx.drawImage(planeImg, planeX - 25, planeY - 25, 65, 42);
     } else {
         // 💥 বিস্ফোরণ বা স্ক্রিন শেক ইফেক্ট
@@ -345,6 +346,7 @@ function drawGame() {
     
     requestAnimationFrame(drawGame);
 }
+
 
 
 // 🚀 বাজি ধরা এবং ক্যাশআউটের মেইন হ্যান্ডলার ফাংশন
