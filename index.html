@@ -276,7 +276,7 @@ let isBetting = false;
 let isCrashed = false;
 let currentMultiplier = 1.00;
 
-const canvas = document.getElementById('game-canvas') || document.querySelector('canvas');
+const canvas = document.getElementById('game-canvas') || document.querySelector('canvas') || document.getElementsByTagName('canvas')[0];
 const ctx = canvas ? canvas.getContext('2d') : null;
 
 // 🖼️ ইমেজ সোর্স লোডার
@@ -287,10 +287,10 @@ const urlParams = new URLSearchParams(window.location.search);
 const urlUserId = urlParams.get('userId') || urlParams.get('username') || "Roky123";
 const urlWallet = urlParams.get('wallet') || "main";
 
-// 🛫 ১০০০০% একুরেট ক্যানভাস বাউন্ডারি এবং কার্ভ ট্র্যাকিং ভেরিয়েবল
+// 🛫 ক্যানভাস বাউন্ডারি এবং কার্ভ ট্র্যাকিং ভেরিয়েবল
 let planeX = 0;
 let planeY = 0;
-let shakeTime = 0; // বিস্ফোরণের ক্যাসকেড ইফেক্ট
+let shakeTime = 0; 
 
 function drawGame() {
     if (!ctx || !canvas) return;
@@ -304,23 +304,19 @@ function drawGame() {
     const endX = canvas.width - 120;
     const endY = 80;
     
-    // 🎯 ১. ডাইনামিক মাল্টিপ্লায়ার অনুযায়ী হেলিকপ্টারের এক্স-ওয়াই এক্সিস হিসাব
-    // এটি নিশ্চিত করবে বিমান সর্বোচ্চ ৮০% গ্রাফ এরিয়া কভার করবে, কখনো বক্স ক্রস করবে না
+    // ডাইনামিক মাল্টিপ্লায়ার অনুযায়ী হেলিকপ্টারের এক্স-ওয়াই এক্সিস হিসাব
     let progress = Math.min(1, (currentMultiplier - 1.00) / 4.00); 
     
     if (!isCrashed) {
         planeX = startX + (endX - startX) * progress;
-        // প্যারাবোলিক কার্ভ ইকুয়েশন: বাম থেকে ডানে কার্ভ লাইন বেয়ে ওড়ার জন্য
         planeY = startY - (startY - endY) * Math.pow(progress, 1.5);
         
-        // 🎯 ২. বিমানের পেছনের রেড অ্যাভিয়েশন গ্রাফ লাইন ড্রয়িং (Line Curve)
+        // বিমানের পেছনের রেড অ্যাভিয়েশন গ্রাফ লাইন ড্রয়িং (Line Curve)
         ctx.beginPath();
         ctx.strokeStyle = '#ff003f';
         ctx.lineWidth = 4;
-        ctx.setLineDash([6, 4]); // ড্যাশড লাইন ইফেক্ট
         ctx.moveTo(startX, startY);
         
-        // লাইভ ট্র্যাকিং লাইন ড্রয়িং লুপ
         for (let i = 0; i <= progress * 100; i++) {
             let t = i / 100;
             let lx = startX + (endX - startX) * t;
@@ -328,17 +324,16 @@ function drawGame() {
             ctx.lineTo(lx, ly);
         }
         ctx.stroke();
-        ctx.setLineDash([]); // লাইন টাইপ রিস্টোর
         
-        // 🚁 হেলিকপ্টারটি স্ক্রিনে ড্র করা হলো
+        // হেলিকপ্টার ড্রয়িং
         ctx.drawImage(planeImg, planeX - 25, planeY - 25, 70, 45);
     } else {
-        // 🎯 ৩. আল্ট্রা-স্মুথ বিস্ফোরণ ও স্ক্রিন শেক (Shake Effect)
+        // আল্ট্রা-স্মুথ বিস্ফোরণ ও স্ক্রিন শেক (Shake Effect)
         ctx.save();
         if (shakeTime > 0) {
             let dx = (Math.random() - 0.5) * 8;
             let dy = (Math.random() - 0.5) * 8;
-            ctx.translate(dx, dy); // ক্যানভাসকে হালকা ভাইব্রেট করানো হচ্ছে
+            ctx.translate(dx, dy);
             shakeTime--;
         }
         // বিস্ফোরণের ছবি ড্র করা হলো
@@ -352,9 +347,9 @@ function drawGame() {
 // 🚀 বাজি ধরা এবং ক্যাশআউটের মেইন হ্যান্ডলার ফাংশন
 async function handleAction() {
     try { document.getElementById('s-click').play(); } catch(e){}
-    const btn = document.getElementById('btn-1');
-    const amtLabel = document.getElementById('amt-1');
-    const currentBetAmount = parseInt(amtLabel.innerText);
+    const btn = document.getElementById('btn-1') || document.querySelector('.bet-btn') || document.querySelector('button');
+    const amtLabel = document.getElementById('amt-1') || document.querySelector('.amount-text');
+    const currentBetAmount = parseInt(amtLabel.innerText) || 100;
 
     if (window.isProcessingBet) return;
     window.isProcessingBet = true;
@@ -398,36 +393,46 @@ async function handleAction() {
     }
 }
 
-function setAmt(val) { document.getElementById('amt-1').innerText = val; }
+function setAmt(val) { 
+    const amtLabel = document.getElementById('amt-1') || document.querySelector('.amount-text');
+    if(amtLabel) amtLabel.innerText = val; 
+}
 function changeAmt(diff) {
-    const amtLabel = document.getElementById('amt-1');
-    let current = parseInt(amtLabel.innerText) || 10;
-    amtLabel.innerText = Math.max(10, current + diff);
+    const amtLabel = document.getElementById('amt-1') || document.querySelector('.amount-text');
+    if(amtLabel) {
+        let current = parseInt(amtLabel.innerText) || 10;
+        amtLabel.innerText = Math.max(10, current + diff);
+    }
 }
 
 function toggleTab(type) {
-    document.getElementById('tab-bet').classList.toggle('active-tab', type === 'bet');
-    document.getElementById('tab-auto').classList.toggle('active-tab', type === 'auto');
-    document.getElementById('auto-settings-panel').style.display = (type === 'bet') ? 'none' : 'flex';
+    const autoPanel = document.getElementById('auto-settings-panel');
+    const tabBet = document.getElementById('tab-bet');
+    const tabAuto = document.getElementById('tab-auto');
+    if(tabBet) tabBet.classList.toggle('active-tab', type === 'bet');
+    if(tabAuto) tabAuto.classList.toggle('active-tab', type === 'auto');
+    if(autoPanel) autoPanel.style.display = (type === 'bet') ? 'none' : 'flex';
 }
 
 // 📊 লাইভ সকেট গেম আপডেট লিসেনার
 socket.on("gameUpdate", (data) => {
-    const multLabel = document.getElementById("multiplier-text");
+    // 🎯 ইউনিভার্সিটি আইডি ট্র্যাকার: থিমের ভেতরের সম্ভাব্য সব নামের টেক্সট এলিমেন্ট এক ক্লিকে আপডেট করবে
+    const multLabel = document.getElementById("multiplier-text") || document.getElementById("multiplier") || document.querySelector('.multiplier') || document.querySelector('.main-text b');
     if (multLabel && data.multiplier) {
         multLabel.innerText = data.multiplier + "x";
         currentMultiplier = parseFloat(data.multiplier);
     }
 
+    // ডাইনামিক লাইভ রিসেট প্রোটোকল
     if (data.is_crashed === 0) {
-        isCrashed = false;
+        isCrashed = false; 
     } else if (data.is_crashed === 1) {
         if (!isCrashed) {
             isCrashed = true;
-            shakeTime = 15; // ১৫ ফ্রেম পর্যন্ত ক্যানভাস কাঁপবে (বিস্ফোরণ ইফেক্ট)
+            shakeTime = 15; 
         }
         isBetting = false;
-        const btn = document.getElementById('btn-1');
+        const btn = document.getElementById('btn-1') || document.querySelector('.bet-btn') || document.querySelector('button');
         if (btn) {
             btn.innerText = "BET";
             btn.classList.remove('cashout');
@@ -436,12 +441,11 @@ socket.on("gameUpdate", (data) => {
     }
 });
 
-// ইমেজ লোড হওয়ার পর গ্রাফিক্স ইঞ্জিন স্টার্ট করা হলো
+// গ্রাফিক্স ইঞ্জিন চালু করা হলো
 if (canvas) {
     planeImg.onload = () => { drawGame(); };
+    blastImg.onload = () => { if(isCrashed) drawGame(); };
 }
 </script>
 </body>
 </html>
-
-
