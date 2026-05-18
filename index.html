@@ -421,18 +421,42 @@ function toggleTab(type) {
     if(autoPanel) autoPanel.style.display = (type === 'bet') ? 'none' : 'flex';
 }
 
-// 📊 লাইভ সকেট গেম আপডেট লিসেনার
+// 📊 লাইভ সকেট গেম আপডেট ও ডাইনামিক হিস্ট্রি লিসেনার
 socket.on("gameUpdate", (data) => {
+    // ১. মেইন মাল্টিপ্লায়ার টেক্সট আপডেট
     const multLabel = document.getElementById("multiplier-text") || document.getElementById("multiplier") || document.querySelector('.multiplier') || document.querySelector('.main-text b');
     if (multLabel && data.multiplier) {
         multLabel.innerText = data.multiplier + "x";
         currentMultiplier = parseFloat(data.multiplier);
     }
 
-    // 🎯 সাউন্ড-সিঙ্ক করা লাইভ রিসেট প্রোটোকল
+    // 🎯 ২. গেম বক্সের ওপরের বেট হিস্ট্রি লাইন (Crash History Bubble Renderer)
+    const historyContainer = document.getElementById("history-container") || document.querySelector(".history-line") || document.querySelector(".stats-list") || document.getElementById("crash-history");
+    if (historyContainer && data.history && Array.isArray(data.history)) {
+        historyContainer.innerHTML = ""; // পুরানো বাবলগুলো ক্লিয়ার করা হলো
+        
+        // ব্যাকঅ্যান্ড থেকে আসা শেষ ৮টি ক্রাশ পয়েন্টকে সুন্দর রঙিন বাবলে রূপান্তর
+        data.history.slice(0, 8).forEach(val => {
+            const bubble = document.createElement("span");
+            bubble.className = "history-bubble";
+            bubble.innerText = val + "x";
+            
+            // ক্যাসিনো নিয়মে মাল্টিপ্লায়ারের মান অনুযায়ী কালার কোড সেটআপ
+            let num = parseFloat(val);
+            if (num < 1.20) {
+                bubble.style.cssText = "background: #1f2937; color: #60a5fa; border: 1px solid #3b82f6; padding: 3px 8px; margin: 0 4px; border-radius: 20px; font-weight: bold; font-size: 11px; display: inline-block;";
+            } else if (num < 2.00) {
+                bubble.style.cssText = "background: #311557; color: #c084fc; border: 1px solid #a855f7; padding: 3px 8px; margin: 0 4px; border-radius: 20px; font-weight: bold; font-size: 11px; display: inline-block;";
+            } else {
+                bubble.style.cssText = "background: #4c0519; color: #f43f5e; border: 1px solid #f43f5e; padding: 3px 8px; margin: 0 4px; border-radius: 20px; font-weight: bold; font-size: 11px; display: inline-block;";
+            }
+            historyContainer.appendChild(bubble);
+        });
+    }
+
+    // সাউন্ড-সিঙ্ক করা লাইভ রিসেট প্রোটোকল
     if (data.is_crashed === 0) {
         isCrashed = false; 
-        // 🛫 হেলিকপ্টার ১.০১x এর ওপরে গেলেই ব্যাকগ্রাউন্ড ওড়ার শব্দ শুরু হবে
         if (currentMultiplier > 1.01) {
             try { flySound.play(); } catch(e){}
         }
@@ -441,7 +465,6 @@ socket.on("gameUpdate", (data) => {
             isCrashed = true;
             shakeTime = 15; 
             
-            // 💥 ক্রাশ হওয়ার সাথে সাথে ওড়ার শব্দ স্টপ হয়ে বিস্ফোরণের শব্দ বাস্ট হবে
             try {
                 flySound.pause();
                 flySound.currentTime = 0;
@@ -464,5 +487,3 @@ if (canvas) {
 </script>
 </body>
 </html>
-    
-
