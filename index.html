@@ -302,7 +302,7 @@ function drawGame() {
     // একদম বামদিকের নিচের কর্নার (0,0 গ্রাফ পজিশন)
     const startX = 5;                        
     const startY = canvas.height - 5;        
-    const endX = canvas.width - 95;          // সাইজ বড় করায় সেফটি বাউন্ডারি কিছুটা কমানো হলো
+    const endX = canvas.width - 95;          
     const endY = 65;                         
     
     // গতি সিঙ্ক মেকানিজম
@@ -328,10 +328,11 @@ function drawGame() {
         }
         ctx.stroke();
         
-        // 🚁 🎯 হেলিকপ্টার ড্রয়িং: সাইজ বাড়িয়ে প্রস্থ ৮৫ এবং উচ্চতা ৫৫ পিক্সেল করা হলো (আগে ৬৫x৪২ ছিল)
-        ctx.drawImage(planeImg, planeX - 35, planeY - 35, 85, 55);
+        // 🚁 🎯 গ্যাপ ফিক্সড: planeX এবং planeY এর অফসেট পরিবর্তন করা হলো (-৫২ এবং -৪০ করা হয়েছে)
+        // এর ফলে লাল লাইনের শেষ মাথাটি একদম নিখুঁতভাবে হেলিকপ্টারের পেছনের অংশে লেগে থাকবে
+        ctx.drawImage(planeImg, planeX - 52, planeY - 40, 85, 55);
     } else {
-        // 💥 বিস্ফোরণ বা স্ক্রিন শেক ইফেক্ট (বিস্ফোরণের সাইজও আনুপাতিকভাবে বড় করা হয়েছে)
+        // 💥爆炸 বা স্ক্রিন শেক ইফেক্ট
         ctx.save();
         if (shakeTime > 0) {
             let dx = (Math.random() - 0.5) * 6;
@@ -345,6 +346,7 @@ function drawGame() {
     
     requestAnimationFrame(drawGame);
 }
+
 
 
 
