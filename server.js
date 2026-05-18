@@ -16,7 +16,7 @@ app.use(express.static(__dirname));
 app.use('/*.png', express.static(__dirname));
 app.use('/*.mp3', express.static(__dirname));
 
-const MAIN_SITE_URL = "https://onrender.com"; 
+const MAIN_SITE_URL = "https://betlover247.onrender.com"; 
 
 let currentMultiplier = 1.00;
 let isCrashed = false;
