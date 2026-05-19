@@ -378,27 +378,37 @@ async function handleAction() {
         } catch (e) { window.isProcessingBet = false; }
     } else {
         try {
+            // 🎯 ক্যাশআউট বাটন আনলকার: ক্লিক ব্লক জোরপূর্বক বাইপাস করা হলো
+            window.isProcessingBet = false; 
+            
             const res = await fetch('/api/cash-out', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ amount: currentBetAmount, userId: urlUserId, wallet: urlWallet })
             });
             const data = await res.json();
-            window.isProcessingBet = false;
             
             if (data.success) {
                 isBetting = false;
                 btn.innerText = "BET";
                 btn.classList.remove('cashout');
                 
-                // 🔊 ক্যাশআউট সফল হলে ক্লিকের সাউন্ড বাজবে
+                // ক্যাশআউট সফল হওয়ার সাউন্ড
                 try { betSound.play(); } catch(e){}
                 
-                if (window.parent) { window.parent.postMessage({ action: "refresh_wallet" }, "*"); }
+                // জিতার পর মেইন সাইটের ব্যালেন্স প্লাস করার সিগন্যাল পাঠানো
+                if (window.parent) { 
+                    window.parent.postMessage({ action: "refresh_wallet" }, "*"); 
+                }
+            } else {
+                console.log(data.message || "Cashout Failed!");
             }
-        } catch (e) { window.isProcessingBet = false; }
+        } catch (e) { 
+            window.isProcessingBet = false;
+            console.error(e); 
+        }
     }
-}
+
 
 function setAmt(val) { 
     const amtLabel = document.getElementById('amt-1') || document.querySelector('.amount-text');
