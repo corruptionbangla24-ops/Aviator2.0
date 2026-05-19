@@ -521,6 +521,11 @@ socket.on("gameUpdate", (data) => {
         multLabel.innerText = data.multiplier + "x";
         currentMultiplier = parseFloat(data.multiplier);
     }
+    // 🎯 ৫২৩ লাইনের ঠিক নিচে হুবহু এই ৩টি লাইনের অটো-ক্যাশআউট লুপটি বসিয়ে দিন:
+if (window.isAutoCashoutEnabled && isBetting && !isCrashed && currentMultiplier >= window.autoCashoutMultiplier) {
+    handleAction();
+}
+
 
     // 🎯 ২. বেট হিস্ট্রি বাবল রেন্ডারার (আপনার স্ক্রিনশটের ২১২ লাইনের 'history-box' আইডিতে সরাসরি কানেক্ট করা হলো)
     const historyContainer = document.getElementById("history-box");
