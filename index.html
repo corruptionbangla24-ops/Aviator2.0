@@ -376,16 +376,24 @@ async function handleAction() {
                 if (window.parent) { window.parent.postMessage({ action: "refresh_wallet" }, "*"); }
             }
         } catch (e) { window.isProcessingBet = false; }
-      } else {
+       } else {
         try {
-            // 🎯 বাটন অবজেক্ট ফিক্সড: আপনার থিমের আসল বাটন এলিমেন্টকে এটি নিখুঁতভাবে ক্যাচ করবে
+            // 🎯 সেশন প্রোটেকশন লক: ক্লিক করার সাথে সাথে ইউআরএল থেকে ইউজার আইডি ও ওয়ালেট আবার নতুন করে রি-লক করবে, সেশন ব্রেক হবে না
             window.isProcessingBet = false; 
             const targetBtn = btn || document.getElementById('btn-1') || document.getElementById('btn-2') || document.querySelector('.bet-btn') || document.querySelector('.cashout-btn') || document.querySelector('button');
             
+            const freshParams = new URLSearchParams(window.location.search);
+            const freshUserId = freshParams.get('userId') || freshParams.get('username') || urlUserId;
+            const freshWallet = freshParams.get('wallet') || urlWallet;
+
             const res = await fetch('/api/cash-out', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount: currentBetAmount, userId: urlUserId, wallet: urlWallet })
+                body: JSON.stringify({ 
+                    amount: currentBetAmount, 
+                    userId: freshUserId, 
+                    wallet: freshWallet 
+                })
             });
             const data = await res.json();
             
@@ -396,10 +404,8 @@ async function handleAction() {
                     targetBtn.classList.remove('cashout');
                 }
                 
-                // ক্যাশআউট সফল হওয়ার সাউন্ড
                 try { betSound.play(); } catch(e){}
                 
-                // জিতার পর মেইন সাইটের ব্যালেন্স প্লাস করার সিগন্যাল পাঠানো
                 if (window.parent) { 
                     window.parent.postMessage({ action: "refresh_wallet" }, "*"); 
                 }
@@ -411,6 +417,7 @@ async function handleAction() {
             console.error(e); 
         }
     }
+   
 
 }
 
