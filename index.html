@@ -252,12 +252,14 @@
             <div id="auto-settings-panel" class="auto-settings" style="display: none;">
                 <div class="auto-row">
                     <span>Auto Bet</span>
-                    <div class="toggle" id="toggle-autobet" onclick="toggleAuto('bet')"></div>
+                   <div class="toggle" id="toggle-autobet" onclick="toggleAutoBet(this)"></div>
+ 
                 </div>
                 <div class="auto-row">
                     <span>Auto Cashout</span>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <div class="toggle" id="toggle-autocash" onclick="toggleAuto('cashout')"></div>
+                        <div class="toggle" id="toggle-autocash" onclick="toggleAutoCashout(this)"></div>
+
                         <div class="val-box" id="auto-val-1" onclick="setAutoValue()">2.00x</div>
                     </div>
                 </div>
