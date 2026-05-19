@@ -108,6 +108,8 @@ app.post('/api/place-bet', async (req, res) => {
     } catch (e) { res.json({ success: false, message: "Timeout!" }); }
 });
 
+// server.js এর ক্যাশআউট রাউট অংশটি হুবহু এটি দিয়ে প্রতিস্থাপন করুন:
+
 app.post('/api/cash-out', async (req, res) => {
     const { userId, amount, wallet } = req.body;
     let targetBet = amount || (activeBets[userId] ? activeBets[userId].amount : 0);
@@ -115,14 +117,29 @@ app.post('/api/cash-out', async (req, res) => {
     if (!isCrashed && targetBet > 0 && activeBets[userId] && !activeBets[userId].cashedOut) {
         let winAmount = targetBet * currentMultiplier;
         try {
-            const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', { action: "win", username: userId, amount: parseFloat(winAmount.toFixed(2)), wallet: wallet });
+            // 🎯 এপিআই গেটওয়ে ফিক্সড: পিএইচপি (api_callback.php) এর কন্ডিশন ম্যাচ করতে এখানে 'bet_amount' যুক্ত করা হলো
+            const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', { 
+                action: "win", 
+                username: userId, 
+                amount: parseFloat(winAmount.toFixed(2)), 
+                bet_amount: parseFloat(targetBet), // আসল বাজি ধরার পরিমাণটি সিঙ্ক করা হলো
+                wallet: wallet 
+            });
+            
             if (response.data && response.data.status === "ok") {
                 activeBets[userId].cashedOut = true;
                 res.json({ success: true, winAmount: winAmount.toFixed(2), balance: response.data.balance });
-            } else { res.json({ success: false, message: "Declined!" }); }
-        } catch (e) { res.json({ success: false, message: "Error!" }); }
-    } else { res.json({ success: false, message: "Invalid Cashout!" }); }
+            } else { 
+                res.json({ success: false, message: response.data.message || "Declined!" }); 
+            }
+        } catch (e) { 
+            res.json({ success: false, message: "Error!" }); 
+        }
+    } else { 
+        res.json({ success: false, message: "Invalid Cashout!" }); 
+    }
 });
+
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
