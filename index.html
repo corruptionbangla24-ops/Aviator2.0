@@ -469,6 +469,37 @@ function changeAmt(diff) {
     }
 }
 
+// 🎯 ৪৭১ নম্বর লাইনে হুবহু এই কোডটুকু পেস্ট করুন
+
+window.isAutoBetEnabled = false;
+window.isAutoCashoutEnabled = false;
+window.autoCashoutMultiplier = 2.00;
+
+function toggleAutoBet(element) {
+    window.isAutoBetEnabled = !window.isAutoBetEnabled;
+    if (element) {
+        element.classList.toggle('active', window.isAutoBetEnabled);
+        element.style.background = window.isAutoBetEnabled ? '#00ff88' : '#1c1d20';
+    }
+}
+
+function toggleAutoCashout(element) {
+    window.isAutoCashoutEnabled = !window.isAutoCashoutEnabled;
+    if (element) {
+        element.classList.toggle('active', window.isAutoCashoutEnabled);
+        element.style.background = window.isAutoCashoutEnabled ? '#ff003f' : '#1c1d20';
+    }
+    const targetValBox = document.getElementById('auto-val-1') || document.querySelector('.val-box') || document.getElementById('auto-multiplier-input');
+    if (targetValBox) {
+        window.autoCashoutMultiplier = parseFloat(targetValBox.innerText || targetValBox.value) || 2.00;
+    }
+}
+
+socket.on("gameTimer", (timer) => {
+    if (timer === 2 && window.isAutoBetEnabled && !isBetting && !isCrashed) {
+        handleAction(); 
+    }
+});
 
 function toggleTab(type) {
     const autoPanel = document.getElementById('auto-settings-panel');
