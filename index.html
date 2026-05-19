@@ -534,13 +534,31 @@ socket.on("gameUpdate", (data) => {
         currentMultiplier = parseFloat(data.multiplier);
     }
     
-    // 🎯 ওড়ার সময় প্রতি মিলি-সেকেন্ডে প্লেয়ারের ইনপুট বক্সের তাজা মানটি অটো-রিড করবে
-    if (window.isAutoCashoutEnabled && isBetting && !isCrashed) {
-        updateLiveAutoMultiplier(); // লাইভ ভ্যালু সিঙ্ক ফাংশন কল
-        if (currentMultiplier >= window.autoCashoutMultiplier) {
-            handleAction();
+            if (window.isAutoCashoutEnabled && isBetting && !isCrashed) {
+            const autoElements = [
+                document.getElementById('auto-val-1'),
+                document.getElementById('auto-multiplier-input'),
+                document.querySelector('.val-box'),
+                document.querySelector('.auto-cashout-input'),
+                ...document.querySelectorAll('div, span, input, b')
+            ];
+            for (let el of autoElements) {
+                if (el) {
+                    let txt = (el.value || el.innerText || "").trim();
+                    if (txt.includes('.') && (txt.endsWith('x') || !isNaN(txt.slice(-1)))) {
+                        let cleanNum = parseFloat(txt.replace(/[^\d.]/g, ''));
+                        if (!isNaN(cleanNum) && cleanNum > 1.01 && cleanNum < 100) {
+                            window.autoCashoutMultiplier = cleanNum;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (currentMultiplier >= window.autoCashoutMultiplier) {
+                handleAction();
+            }
         }
-    }
+
 
 
     // 🎯 ২. বেট হিস্ট্রি বাবল রেন্ডারার (আপনার স্ক্রিনশটের ২১২ লাইনের 'history-box' আইডিতে সরাসরি কানেক্ট করা হলো)
