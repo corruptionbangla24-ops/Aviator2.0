@@ -343,19 +343,30 @@ function drawGame() {
     requestAnimationFrame(drawGame);
 }
 
-// 🚀 বাজি ধরা এবং ক্যাশআউটের মেইন হ্যান্ডলার ফাংশন
+// index.html এর handleAction ফাংশনটি হুবহু এটি দিয়ে প্রতিস্থাপন করুন:
+
 async function handleAction() {
-    try { document.getElementById('s-click').play(); } catch(e){}
-    const btn = document.getElementById('btn-1') || document.querySelector('.bet-btn') || document.querySelector('button');
+    // 🛡️ লুপ প্রোটেকশন চেক: যদি অলরেডি বাজি প্রসেস চলে, তবে কোনো রিকোয়েস্ট বা ২য় সাউন্ড ট্রিগার হবে না
+    if (window.isProcessingBet) return;
+    window.isProcessingBet = true; // লক কঠোরভাবে অন করা হলো
+
+    const btn = document.getElementById('btn-1') || document.getElementById('btn-2') || document.querySelector('.bet-btn') || document.querySelector('button');
     const amtLabel = document.getElementById('amt-1') || document.querySelector('.amount-text');
     const currentBetAmount = parseInt(amtLabel.innerText) || 100;
 
-    if (window.isProcessingBet) return;
-    window.isProcessingBet = true;
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlUserId = urlParams.get('userId') || urlParams.get('username') || "";
+    const urlWallet = urlParams.get('wallet') || "main";
 
-    if (!urlUserId) { window.isProcessingBet = false; return; }
+    if (!urlUserId) {
+        window.isProcessingBet = false;
+        return;
+    }
 
     if (!isBetting) {
+        // 🔊 বাজি ধরার প্রথম ম্যানুয়াল ক্লিকেই কেবল সাউন্ড বাজবে
+        try { betSound.play(); } catch(e){}
+        
         try {
             const res = await fetch('/api/place-bet', {
                 method: 'POST',
@@ -363,25 +374,32 @@ async function handleAction() {
                 body: JSON.stringify({ amount: currentBetAmount, userId: urlUserId, wallet: urlWallet })
             });
             const data = await res.json();
-            window.isProcessingBet = false; 
             
             if (data.success) {
                 isBetting = true;
-                btn.innerText = "CASH OUT";
-                btn.classList.add('cashout');
+                if (btn) {
+                    btn.innerText = "CASH OUT";
+                    btn.classList.add('cashout');
+                }
+                // জিতার পর ক্যাশআউটের জন্য বাটনটি আনলক করা হলো
+                setTimeout(() => { window.isProcessingBet = false; }, 200);
                 
-                // 🔊 বাজি সফল হলে ক্লিকের সাউন্ড বাজবে
-                try { betSound.play(); } catch(e){}
-                
-                if (window.parent) { window.parent.postMessage({ action: "refresh_wallet" }, "*"); }
+                if (window.parent) { 
+                    window.parent.postMessage({ action: "refresh_wallet" }, "*"); 
+                }
+            } else {
+                window.isProcessingBet = false;
+                console.log(data.message || "Bet Declined!");
             }
-        } catch (e) { window.isProcessingBet = false; }
-       } else {
+        } catch (e) { 
+            window.isProcessingBet = false;
+            console.error("Server Error!"); 
+        }
+    } else {
         try {
-            // 🎯 সেশন প্রোটেকশন লক: ক্লিক করার সাথে সাথে ইউআরএল থেকে ইউজার আইডি ও ওয়ালেট আবার নতুন করে রি-লক করবে, সেশন ব্রেক হবে না
-            window.isProcessingBet = false; 
-            const targetBtn = btn || document.getElementById('btn-1') || document.getElementById('btn-2') || document.querySelector('.bet-btn') || document.querySelector('.cashout-btn') || document.querySelector('button');
-            
+            // 🔊 ২য় বার আপনি যখন নিজে আঙুল দিয়ে ক্যাশআউটে চাপবেন, ঠিক তখনই সাউন্ড বাজবে
+            try { betSound.play(); } catch(e){}
+
             const freshParams = new URLSearchParams(window.location.search);
             const freshUserId = freshParams.get('userId') || freshParams.get('username') || urlUserId;
             const freshWallet = freshParams.get('wallet') || urlWallet;
@@ -389,23 +407,18 @@ async function handleAction() {
             const res = await fetch('/api/cash-out', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    amount: currentBetAmount, 
-                    userId: freshUserId, 
-                    wallet: freshWallet 
-                })
+                body: JSON.stringify({ amount: currentBetAmount, userId: freshUserId, wallet: freshWallet })
             });
             const data = await res.json();
             
+            window.isProcessingBet = false; // লক রিলিজ
+            
             if (data.success) {
                 isBetting = false;
-                if (targetBtn) {
-                    targetBtn.innerText = "BET";
-                    targetBtn.classList.remove('cashout');
+                if (btn) {
+                    btn.innerText = "BET";
+                    btn.classList.remove('cashout');
                 }
-                
-                try { betSound.play(); } catch(e){}
-                
                 if (window.parent) { 
                     window.parent.postMessage({ action: "refresh_wallet" }, "*"); 
                 }
@@ -417,9 +430,8 @@ async function handleAction() {
             console.error(e); 
         }
     }
-   
-
 }
+
 
 function setAmt(val) { 
     const amtLabel = document.getElementById('amt-1') || document.querySelector('.amount-text');
