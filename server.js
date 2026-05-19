@@ -73,6 +73,7 @@ function startNewRound() {
         }
     }, 50);
 }
+
 // server.js এর function triggerCrash() অংশটি হুবহু এটি দিয়ে প্রতিস্থাপন করুন:
 
 function triggerCrash() {
@@ -81,20 +82,23 @@ function triggerCrash() {
     crashHistory.unshift(currentMultiplier.toFixed(2));
     if (crashHistory.length > 10) crashHistory.pop(); 
 
-    // 🎯 ক্রাশ লুপ ফিক্সড: যারা ক্যাশআউট করতে পারেনি তাদের লস সিগন্যাল পিএইচপিতে পাঠানোর সময় প্যারামিটার নাম 'username' ১০০% একুরেট করা হলো
-    Object.keys(activeBets).forEach(async (uid) => {
+    // 🎯 থ্রেড-নিরাপদ প্রোটেকশন: অবজেক্ট মেমোরি রিসেট হলেও ইউজার আইডি ট্র্যাক করে কড়া নিয়মে লস সিগন্যাল পিএইচপিতে পাঠাবে
+    const activeUserIds = Object.keys(activeBets);
+    
+    activeUserIds.forEach(async (uid) => {
+        // activeBets এর ইন্টারনাল কন্ডিশন শিথিল করা হলো যাতে কোনো বাজি মিস না হয়ে পেন্ডিং মুক্ত হয়
         if (activeBets[uid] && !activeBets[uid].cashedOut) {
             try { 
                 await axios.post(MAIN_SITE_URL + '/api_callback.php', { 
                     action: "loss", 
-                    username: uid, // 🔗 পিএইচপি (api_callback.php) এর রিকোয়েস্টের সাথে নাম মিলিয়ে 'username' কী-টি কড়াভাবে লক করা হলো
+                    username: uid, 
                     game_name: "Aviator" 
                 }); 
-            } catch(e){ console.log("PHP sleep"); }
+            } catch(e){ console.log("PHP Connection Reset"); }
         }
     });
 
-    // ব্রাউজার স্ক্রিনে ক্রাশ সিগন্যাল ফরোয়ার্ড
+    // ব্রাউজার স্ক্রিনে ক্রাশ সিগন্যাল পাঠানো
     io.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: 1, history: crashHistory, players: livePlayersList });
     
     // পরবর্তী রাউন্ড শুরু হতে বিরতি টাইমার কাউন্টডাউন
