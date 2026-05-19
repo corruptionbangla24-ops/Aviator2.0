@@ -491,14 +491,20 @@ function toggleAutoCashout(element) {
         element.classList.toggle('active', window.isAutoCashoutEnabled);
         element.style.background = window.isAutoCashoutEnabled ? '#ff003f' : '#1c1d20';
     }
-    const targetValBox = document.getElementById('auto-val-1');
+    // 🎯 ডাইনামিক লাইভ ফিক্স: বাটন অন করার সাথে সাথে এটি ইনস্ট্যান্ট মান রিড করবে
+    updateLiveAutoMultiplier();
+}
+
+// 🎯 ইউনিভার্সাল অটো-ক্যাশআউট ভ্যালু ট্র্যাকার (যা গেমের যেকোনো মুহূর্তে লাইভ মান রিড করতে সক্ষম)
+function updateLiveAutoMultiplier() {
+    const targetValBox = document.getElementById('auto-val-1') || document.querySelector('.val-box') || document.getElementById('auto-multiplier-input');
     if (targetValBox) {
         let textVal = targetValBox.innerText || targetValBox.value || "2.00";
         let cleanNum = parseFloat(textVal.replace(/[^\d.]/g, '')); 
         window.autoCashoutMultiplier = isNaN(cleanNum) ? 2.00 : cleanNum;
-        console.log("🎯 অটো ক্যাশআউট সেট করা হলো: " + window.autoCashoutMultiplier + "x এ");
     }
 }
+
 
 
 socket.on("gameTimer", (timer) => {
@@ -527,10 +533,14 @@ socket.on("gameUpdate", (data) => {
         multLabel.innerText = data.multiplier + "x";
         currentMultiplier = parseFloat(data.multiplier);
     }
-    // 🎯 ৫২৩ লাইনের ঠিক নিচে হুবহু এই ৩টি লাইনের অটো-ক্যাশআউট লুপটি বসিয়ে দিন:
-if (window.isAutoCashoutEnabled && isBetting && !isCrashed && currentMultiplier >= window.autoCashoutMultiplier) {
-    handleAction();
-}
+    
+    // 🎯 ওড়ার সময় প্রতি মিলি-সেকেন্ডে প্লেয়ারের ইনপুট বক্সের তাজা মানটি অটো-রিড করবে
+    if (window.isAutoCashoutEnabled && isBetting && !isCrashed) {
+        updateLiveAutoMultiplier(); // লাইভ ভ্যালু সিঙ্ক ফাংশন কল
+        if (currentMultiplier >= window.autoCashoutMultiplier) {
+            handleAction();
+        }
+    }
 
 
     // 🎯 ২. বেট হিস্ট্রি বাবল রেন্ডারার (আপনার স্ক্রিনশটের ২১২ লাইনের 'history-box' আইডিতে সরাসরি কানেক্ট করা হলো)
