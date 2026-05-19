@@ -376,11 +376,11 @@ async function handleAction() {
                 if (window.parent) { window.parent.postMessage({ action: "refresh_wallet" }, "*"); }
             }
         } catch (e) { window.isProcessingBet = false; }
-    } else {
+      } else {
         try {
-            // 🎯 ক্যাশআউট বাটন আনলকার: ক্লিক ব্লক এবং বাটন অবজেক্ট জোরপূর্বক বাইপাস করা হলো
+            // 🎯 বাটন অবজেক্ট ফিক্সড: আপনার থিমের আসল বাটন এলিমেন্টকে এটি নিখুঁতভাবে ক্যাচ করবে
             window.isProcessingBet = false; 
-            const targetBtn = document.getElementById('btn-1') || document.getElementById('btn-2') || document.querySelector('.bet-btn') || document.querySelector('.cashout-btn') || document.querySelector('button');
+            const targetBtn = btn || document.getElementById('btn-1') || document.getElementById('btn-2') || document.querySelector('.bet-btn') || document.querySelector('.cashout-btn') || document.querySelector('button');
             
             const res = await fetch('/api/cash-out', {
                 method: 'POST',
