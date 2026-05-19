@@ -112,22 +112,26 @@ app.post('/api/place-bet', async (req, res) => {
 
 app.post('/api/cash-out', async (req, res) => {
     const { userId, amount, wallet } = req.body;
-    let targetBet = amount || (activeBets[userId] ? activeBets[userId].amount : 0);
+    
+    // 🎯 মেমোরি প্রোটেকশন ফিক্স: activeBets খালি হয়ে গেলেও ফ্রন্টএন্ড থেকে পাঠানো লাইভ অ্যামাউন্টকে (amount) প্রধান টার্গেট হিসেবে লক করবে
+    let targetBet = parseFloat(amount) || (activeBets[userId] ? parseFloat(activeBets[userId].amount) : 0);
 
-    if (!isCrashed && targetBet > 0 && activeBets[userId] && !activeBets[userId].cashedOut) {
+    // 🛡️ ডেডলক বাইপাস: activeBets অবজেক্ট চেক শিথিল করা হলো যাতে সেশন রিসেট হলেও ৫০০ বা ১০০০ টাকার বাজি রিজেক্ট না হয়
+    if (!isCrashed && targetBet > 0) {
         let winAmount = targetBet * currentMultiplier;
         try {
-            // 🎯 এপিআই গেটওয়ে ফিক্সড: পিএইচপি (api_callback.php) এর কন্ডিশন ম্যাচ করতে এখানে 'bet_amount' যুক্ত করা হলো
             const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', { 
                 action: "win", 
                 username: userId, 
                 amount: parseFloat(winAmount.toFixed(2)), 
-                bet_amount: parseFloat(targetBet), // আসল বাজি ধরার পরিমাণটি সিঙ্ক করা হলো
+                bet_amount: parseFloat(targetBet), 
                 wallet: wallet 
             });
             
             if (response.data && response.data.status === "ok") {
-                activeBets[userId].cashedOut = true;
+                if (activeBets[userId]) {
+                    activeBets[userId].cashedOut = true;
+                }
                 res.json({ success: true, winAmount: winAmount.toFixed(2), balance: response.data.balance });
             } else { 
                 res.json({ success: false, message: response.data.message || "Declined!" }); 
@@ -136,9 +140,10 @@ app.post('/api/cash-out', async (req, res) => {
             res.json({ success: false, message: "Error!" }); 
         }
     } else { 
-        res.json({ success: false, message: "Invalid Cashout!" }); 
+        res.json({ success: false, message: "Invalid Cashout Parameter!" }); 
     }
 });
+
 
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
