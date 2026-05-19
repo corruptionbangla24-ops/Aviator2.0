@@ -378,8 +378,9 @@ async function handleAction() {
         } catch (e) { window.isProcessingBet = false; }
     } else {
         try {
-            // 🎯 ক্যাশআউট বাটন আনলকার: ক্লিক ব্লক জোরপূর্বক বাইপাস করা হলো
+            // 🎯 ক্যাশআউট বাটন আনলকার: ক্লিক ব্লক এবং বাটন অবজেক্ট জোরপূর্বক বাইপাস করা হলো
             window.isProcessingBet = false; 
+            const targetBtn = document.getElementById('btn-1') || document.getElementById('btn-2') || document.querySelector('.bet-btn') || document.querySelector('.cashout-btn') || document.querySelector('button');
             
             const res = await fetch('/api/cash-out', {
                 method: 'POST',
@@ -390,8 +391,10 @@ async function handleAction() {
             
             if (data.success) {
                 isBetting = false;
-                btn.innerText = "BET";
-                btn.classList.remove('cashout');
+                if (targetBtn) {
+                    targetBtn.innerText = "BET";
+                    targetBtn.classList.remove('cashout');
+                }
                 
                 // ক্যাশআউট সফল হওয়ার সাউন্ড
                 try { betSound.play(); } catch(e){}
@@ -408,6 +411,7 @@ async function handleAction() {
             console.error(e); 
         }
     }
+
 }
 
 function setAmt(val) { 
