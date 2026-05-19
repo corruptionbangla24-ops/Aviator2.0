@@ -491,11 +491,15 @@ function toggleAutoCashout(element) {
         element.classList.toggle('active', window.isAutoCashoutEnabled);
         element.style.background = window.isAutoCashoutEnabled ? '#ff003f' : '#1c1d20';
     }
-    const targetValBox = document.getElementById('auto-val-1') || document.querySelector('.val-box') || document.getElementById('auto-multiplier-input');
+    const targetValBox = document.getElementById('auto-val-1');
     if (targetValBox) {
-        window.autoCashoutMultiplier = parseFloat(targetValBox.innerText || targetValBox.value) || 2.00;
+        let textVal = targetValBox.innerText || targetValBox.value || "2.00";
+        let cleanNum = parseFloat(textVal.replace(/[^\d.]/g, '')); 
+        window.autoCashoutMultiplier = isNaN(cleanNum) ? 2.00 : cleanNum;
+        console.log("🎯 অটো ক্যাশআউট সেট করা হলো: " + window.autoCashoutMultiplier + "x এ");
     }
 }
+
 
 socket.on("gameTimer", (timer) => {
     if (timer === 2 && window.isAutoBetEnabled && !isBetting && !isCrashed) {
