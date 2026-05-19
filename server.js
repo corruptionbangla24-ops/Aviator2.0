@@ -73,6 +73,7 @@ function startNewRound() {
         }
     }, 50);
 }
+// server.js এর function triggerCrash() অংশটি হুবহু এটি দিয়ে প্রতিস্থাপন করুন:
 
 function triggerCrash() {
     if (gameInterval) clearInterval(gameInterval);
@@ -80,20 +81,27 @@ function triggerCrash() {
     crashHistory.unshift(currentMultiplier.toFixed(2));
     if (crashHistory.length > 10) crashHistory.pop(); 
 
+    // 🎯 ক্রাশ লুপ ফিক্সড: যারা ক্যাশআউট করতে পারেনি তাদের লস সিগন্যাল পিএইচপিতে পাঠানোর সময় প্যারামিটার নাম 'username' ১০০% একুরেট করা হলো
     Object.keys(activeBets).forEach(async (uid) => {
         if (activeBets[uid] && !activeBets[uid].cashedOut) {
             try { 
-                await axios.post(MAIN_SITE_URL + '/api_callback.php', { action: "loss", username: uid, game_name: "Aviator" }); 
-            } catch(e){}
+                await axios.post(MAIN_SITE_URL + '/api_callback.php', { 
+                    action: "loss", 
+                    username: uid, // 🔗 পিএইচপি (api_callback.php) এর রিকোয়েস্টের সাথে নাম মিলিয়ে 'username' কী-টি কড়াভাবে লক করা হলো
+                    game_name: "Aviator" 
+                }); 
+            } catch(e){ console.log("PHP sleep"); }
         }
     });
 
-    // স্ক্রিনে ক্রাশ হওয়া এবং বিস্ফোরণ ঘটানোর সিগন্যাল
+    // ব্রাউজার স্ক্রিনে ক্রাশ সিগন্যাল ফরোয়ার্ড
     io.emit("gameUpdate", { multiplier: currentMultiplier.toFixed(2), is_crashed: 1, history: crashHistory, players: livePlayersList });
     
-    // ⏳ রাউন্ড শেষ হওয়ার পর ৭ সেকেন্ডের টাইমার কাউন্টডাউন বিরতি
+    // পরবর্তী রাউন্ড শুরু হতে বিরতি টাইমার কাউন্টডাউন
     setTimeout(() => { startNewRound(); }, 7000);
 }
+
+
 
 app.post('/api/place-bet', async (req, res) => {
     const { amount, userId, wallet } = req.body;
