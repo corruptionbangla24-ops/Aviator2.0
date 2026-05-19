@@ -453,13 +453,22 @@ function setAmt(val) {
     const amtLabel = document.getElementById('amt-1') || document.querySelector('.amount-text');
     if(amtLabel) amtLabel.innerText = val; 
 }
+// index.html এর changeAmt ফাংশনটি হুবহু এটি দিয়ে প্রতিস্থাপন করুন:
+
 function changeAmt(diff) {
     const amtLabel = document.getElementById('amt-1') || document.querySelector('.amount-text');
-    if(amtLabel) {
-        let current = parseInt(amtLabel.innerText) || 10;
-        amtLabel.innerText = Math.max(10, current + diff);
+    if (amtLabel) {
+        let current = parseInt(amtLabel.innerText) || 100;
+        
+        // 🎯 ১০ টাকা করে কমাবাড়ার লজিক:
+        // diff-এর মান পজিটিভ হলে ১০ যোগ হবে, নেগেটিভ হলে ১০ বিয়োগ হবে
+        let step = (diff > 0) ? 10 : -10;
+        
+        // সর্বনিম্ন বাজি ১০ টাকা লক করা হলো (যাতে ০ বা মাইনাস না হতে পারে)
+        amtLabel.innerText = Math.max(10, current + step);
     }
 }
+
 
 function toggleTab(type) {
     const autoPanel = document.getElementById('auto-settings-panel');
