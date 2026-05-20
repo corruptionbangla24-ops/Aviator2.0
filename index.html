@@ -414,6 +414,10 @@ async function handleAction() {
             console.error("Server Error!"); 
         }
         } else {
+        if (window.isAutoCashoutEnabled) {
+            console.log("📢 অটো-ক্যাশআউট চালু আছে! ম্যানুয়াল ক্লিক কঠোরভাবে ব্লক করা হলো।");
+            return; 
+        }
         try {
             const targetBtn = btn || document.getElementById('btn-1') || document.getElementById('btn-2') || document.querySelector('.bet-btn') || document.querySelector('.cashout-btn') || document.querySelector('button');
             
