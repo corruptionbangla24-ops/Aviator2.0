@@ -549,8 +549,8 @@ socket.on("gameUpdate", (data) => {
         multLabel.innerText = data.multiplier + "x";
         currentMultiplier = parseFloat(data.multiplier);
     }
-          if (window.isAutoCashoutEnabled && isBetting && !isCrashed) {
-            // 🎯 বাউন্ডারি ফিক্সড: পুরো স্ক্রিন স্ক্যান না করে এটি কঠোরভাবে শুধুমাত্র 'auto-val-1' বক্সের ভেতরকার ২.০০ মানটিই রিড করবে
+           if (window.isAutoCashoutEnabled && isBetting && !isCrashed) {
+            // 🎯 বাউন্ডারি ফিক্সড: পুরো স্ক্রিন স্ক্যান না করে এটি কঠোরভাবে শুধুমাত্র 'auto-val-1' বক্সের ভেতরকার মানটিই রিড করবে
             const targetValBox = document.getElementById('auto-val-1') || document.querySelector('.val-box');
             if (targetValBox) {
                 let textVal = targetValBox.innerText || targetValBox.value || "2.00";
@@ -560,11 +560,13 @@ socket.on("gameUpdate", (data) => {
                 }
             }
             
-            // নির্ধারিত তাজা মান স্পর্শ করার সাথে সাথে পারফেক্টলি অটো-ক্যাশআউট ট্রিগার হবে
-            if (currentMultiplier >= window.autoCashoutMultiplier) {
+            // 🛡️ ডুপ্লিকেট প্রোটেকশন লক: কারেন্ট মাল্টিপ্লায়ার সেট করা মান স্পর্শ করলেই কেবল একবারই রিকোয়েস্ট যাবে, লুপে ৪-৫ বার হিট করবে না
+            if (currentMultiplier >= window.autoCashoutMultiplier && !window.isProcessingBet) {
+                window.isProcessingBet = true; // একই মিলি-সেকেন্ডে ২য় বার রিকোয়েস্ট ফায়ার হওয়া কঠোরভাবে ব্লক করা হলো
                 handleAction();
             }
         }
+       
   
     // 🎯 ২. বেট হিস্ট্রি বাবল রেন্ডারার (আপনার স্ক্রিনশটের ২১২ লাইনের 'history-box' আইডিতে সরাসরি কানেক্ট করা হলো)
     const historyContainer = document.getElementById("history-box");
