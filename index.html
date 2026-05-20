@@ -505,7 +505,15 @@ function updateLiveAutoMultiplier() {
     }
 }
 
-
+function setAutoValue() {
+    const targetValBox = document.getElementById('auto-val-1') || document.querySelector('.val-box');
+    if (targetValBox) {
+        let textVal = targetValBox.innerText || targetValBox.value || "2.00";
+        let cleanNum = parseFloat(textVal.replace(/[^\d.]/g, '')); 
+        window.autoCashoutMultiplier = isNaN(cleanNum) ? 2.00 : cleanNum;
+        console.log("🎯 লাইভ অটো ভ্যালু সিঙ্ক: " + window.autoCashoutMultiplier);
+    }
+}
 
 socket.on("gameTimer", (timer) => {
     if (timer === 2 && window.isAutoBetEnabled && !isBetting && !isCrashed) {
