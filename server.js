@@ -124,25 +124,38 @@ app.post('/api/place-bet', async (req, res) => {
 
 app.post('/api/cash-out', async (req, res) => {
     const { userId, amount, wallet } = req.body;
-    
-    // 🎯 মেমোরি প্রোটেকশন ফিক্স: activeBets খালি হয়ে গেলেও ফ্রন্টএন্ড থেকে পাঠানো লাইভ অ্যামাউন্টকে (amount) প্রধান টার্গেট হিসেবে লক করবে
-    let targetBet = parseFloat(amount) || (activeBets[userId] ? parseFloat(activeBets[userId].amount) : 0);
+    let targetBet = amount || (activeBets[userId] ? activeBets[userId].amount : 0);
 
-    // 🛡️ ডেডলক বাইপাস: activeBets অবজেক্ট চেক শিথিল করা হলো যাতে সেশন রিসেট হলেও ৫০০ বা ১০০০ টাকার বাজি রিজেক্ট না হয়
-    if (!isCrashed && targetBet > 0) {
-        let winAmount = targetBet * currentMultiplier;
-        try {
-            const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', { 
-                action: "win", 
-                username: userId, 
-                amount: parseFloat(winAmount.toFixed(2)), 
-                bet_amount: parseFloat(targetBet), 
-                wallet: wallet 
-            });
-            
-            if (response.data && response.data.status === "ok") {
-                if (activeBets[userId]) {
-                    activeBets[userId].cashedOut = true;
+    // 🎯 অটো-ক্যাশআউট ডেডলক ফিক্স: বাজি ধরার রো-টি ডাটাবেজে তৈরি হওয়ার জন্য ১০০ মিলি-সেকেন্ডের সেফটি প্রোটেকশন টাইমআউট
+    setTimeout(async () => {
+        if (!isCrashed && targetBet > 0) {
+            let winAmount = targetBet * currentMultiplier;
+            try {
+                const response = await axios.post(MAIN_SITE_URL + '/api_callback.php', { 
+                    action: "win", 
+                    username: userId, 
+                    amount: parseFloat(winAmount.toFixed(2)), 
+                    bet_amount: parseFloat(targetBet), 
+                    wallet: wallet 
+                });
+                
+                if (response.data && response.data.status === "ok") {
+                    if (activeBets[userId]) {
+                        activeBets[userId].cashedOut = true;
+                    }
+                    res.json({ success: true, winAmount: winAmount.toFixed(2), balance: response.data.balance });
+                } else { 
+                    res.json({ success: false, message: response.data.message || "Declined!" }); 
+                }
+            } catch (e) { 
+                res.json({ success: false, message: "Error!" }); 
+            }
+        } else { 
+            res.json({ success: false, message: "Invalid Cashout Parameter!" }); 
+        }
+    }, 100); // 🛡️ ১০০ মিলিসেকেন্ডের ডিলে কন্ডিশন ডাটাবেজ লক হওয়া নিশ্চিত করবে
+});
+
                 }
                 res.json({ success: true, winAmount: winAmount.toFixed(2), balance: response.data.balance });
             } else { 
