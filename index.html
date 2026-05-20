@@ -266,7 +266,9 @@
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <div class="toggle" id="toggle-autocash" onclick="toggleAutoCashout(this)"></div>
 
-                        <div class="val-box" id="auto-val-1" onclick="setAutoValue()">2.00x</div>
+     <!-- 🎯 ২৬৩ নম্বর লাইন ফিক্সড: contenteditable="true" যোগ করায় এখন বক্সে টাচ করলেই এডিট করার জন্য কিবোর্ড ওপেন হবে -->
+<div class="val-box" id="auto-val-1" contenteditable="true" oninput="setAutoValue()" onclick="setAutoValue()" style="outline: none; min-width: 60px; text-align: center;">2.00</div>
+                   
                     </div>
                 </div>
             </div>
