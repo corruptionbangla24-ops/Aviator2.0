@@ -528,10 +528,16 @@ function setAutoValue() {
 
 socket.on("gameTimer", (timer) => {
     if (timer === 5) { window.autoCashoutTriggered = false; window.isProcessingBet = false; }
+    
+    // 🎯 অটো-বেট ওয়ালেট লক: টাইমার ২ সেকেন্ডে আসার সাথে সাথে ইউজার আইডির পাশাপাশি ওয়ালেট ডেটাও নিখুঁতভাবে পাস করবে
     if (timer === 2 && window.isAutoBetEnabled && !isBetting && !isCrashed) {
-        handleAction(); 
+        const urlParams = new URLSearchParams(window.location.search);
+        // মেইন সাইটের ক্যাসিনো থিমের ডিজাইন অনুযায়ী ওয়ালেট প্যারামিটারটি রিড করা হচ্ছে
+        window.urlWallet = urlParams.get('wallet') || "main"; 
+        handleAction(); // স্বয়ংক্রিয় বাজি প্লেস ফাংশন কল
     }
 });
+
 
 
 function toggleTab(type) {
