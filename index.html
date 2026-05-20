@@ -534,7 +534,7 @@ socket.on("gameUpdate", (data) => {
         currentMultiplier = parseFloat(data.multiplier);
     }
     
-            if (window.isAutoCashoutEnabled && isBetting && !isCrashed) {
+           if (window.isAutoCashoutEnabled && isBetting && !isCrashed) {
             const autoElements = [
                 document.getElementById('auto-val-1'),
                 document.getElementById('auto-multiplier-input'),
@@ -558,7 +558,7 @@ socket.on("gameUpdate", (data) => {
                 handleAction();
             }
         }
-
+         
 
 
     // 🎯 ২. বেট হিস্ট্রি বাবল রেন্ডারার (আপনার স্ক্রিনশটের ২১২ লাইনের 'history-box' আইডিতে সরাসরি কানেক্ট করা হলো)
