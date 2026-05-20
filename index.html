@@ -527,10 +527,12 @@ function setAutoValue() {
 }
 
 socket.on("gameTimer", (timer) => {
+    if (timer === 5) { window.autoCashoutTriggered = false; window.isProcessingBet = false; }
     if (timer === 2 && window.isAutoBetEnabled && !isBetting && !isCrashed) {
         handleAction(); 
     }
 });
+
 
 function toggleTab(type) {
     const autoPanel = document.getElementById('auto-settings-panel');
