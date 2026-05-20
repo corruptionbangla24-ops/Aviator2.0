@@ -156,19 +156,6 @@ app.post('/api/cash-out', async (req, res) => {
     }, 100); // 🛡️ ১০০ মিলিসেকেন্ডের ডিলে কন্ডিশন ডাটাবেজ লক হওয়া নিশ্চিত করবে
 });
 
-                }
-                res.json({ success: true, winAmount: winAmount.toFixed(2), balance: response.data.balance });
-            } else { 
-                res.json({ success: false, message: response.data.message || "Declined!" }); 
-            }
-        } catch (e) { 
-            res.json({ success: false, message: "Error!" }); 
-        }
-    } else { 
-        res.json({ success: false, message: "Invalid Cashout Parameter!" }); 
-    }
-});
-
 
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
