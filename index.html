@@ -413,20 +413,16 @@ async function handleAction() {
             window.isProcessingBet = false;
             console.error("Server Error!"); 
         }
-    } else {
+        } else {
         try {
-            // ক্যাশআউট বাটন অবজেক্ট এবং সেশন রি-লকিং মেকানিজম
-            window.isProcessingBet = false; 
             const targetBtn = btn || document.getElementById('btn-1') || document.getElementById('btn-2') || document.querySelector('.bet-btn') || document.querySelector('.cashout-btn') || document.querySelector('button');
             
             const freshParams = new URLSearchParams(window.location.search);
             const freshUserId = freshParams.get('userId') || freshParams.get('username') || urlUserId;
             const freshWallet = freshParams.get('wallet') || urlWallet;
 
-            // ২য় বার আপনি যখন নিজে ম্যানুয়ালি ক্যাশআউটে চাপবেন, ঠিক তখনই সাউন্ড বাজবে
             try { betSound.play(); } catch(e){}
 
-            // 🎯 ইনডেক্স ফাইল পেলোড ফিক্সড: আপনার পাঠানো সার্ভার ফাইলের রিকোয়েস্ট সিকোয়েন্স { userId, amount, wallet } অনুযায়ী হুবহু লক করা হলো
             const res = await fetch('/api/cash-out', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -438,14 +434,18 @@ async function handleAction() {
             });
             const data = await res.json();
             
+            // 🎯 অটো-আনলকার লক রিলিজ: বাজি সফল বা বিফল যাই হোক, লক সাথে সাথে ফ্রেশ আনলক হবে
+            window.isProcessingBet = false; 
+            
             if (data.success) {
                 isBetting = false;
                 if (targetBtn) {
                     targetBtn.innerText = "BET";
                     targetBtn.classList.remove('cashout');
+                    targetBtn.style.setProperty('background-color', '#28a745', 'important');
+                    targetBtn.style.setProperty('background', '#28a745', 'important');
                 }
                 
-                // জিতার পর মেইন সাইটের ব্যালেন্স কোনো রিলোড ছাড়া প্লাস করার সিগন্যাল
                 if (window.parent) { 
                     window.parent.postMessage({ action: "refresh_wallet" }, "*"); 
                 }
@@ -453,11 +453,10 @@ async function handleAction() {
                 console.log(data.message || "Cashout Failed!");
             }
         } catch (e) { 
-            window.isProcessingBet = false;
+            window.isProcessingBet = false; 
             console.error(e); 
         }
     }
-}
 
 function setAmt(val) { 
     const amtLabel = document.getElementById('amt-1') || document.querySelector('.amount-text');
