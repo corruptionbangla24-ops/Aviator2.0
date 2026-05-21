@@ -413,14 +413,10 @@ async function handleAction() {
             window.isProcessingBet = false;
             console.error("Server Error!"); 
         }
-        } else {
-        if (window.isAutoCashoutEnabled) {
-            console.log("📢 অটো-ক্যাশআউট চালু আছে! ম্যানুয়াল ক্লিক কঠোরভাবে ব্লক করা হলো।");
-            return; 
-        }
+       } else {
+        if (window.isAutoCashoutEnabled) { return; }
         try {
-            const targetBtn = btn || document.getElementById('btn-1') || document.getElementById('btn-2') || document.querySelector('.bet-btn') || document.querySelector('.cashout-btn') || document.querySelector('button');
-            
+            const targetBtn = btn || document.getElementById('btn-1') || document.getElementById('btn-2') || document.querySelector('.bet-btn') || document.querySelector('.cashout-btn');
             const freshParams = new URLSearchParams(window.location.search);
             const freshUserId = freshParams.get('userId') || freshParams.get('username') || urlUserId;
             const freshWallet = freshParams.get('wallet') || urlWallet;
@@ -430,37 +426,31 @@ async function handleAction() {
             const res = await fetch('/api/cash-out', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    userId: freshUserId, 
-                    amount: currentBetAmount, 
-                    wallet: freshWallet 
-                })
+                body: JSON.stringify({ userId: freshUserId, amount: currentBetAmount, wallet: freshWallet })
             });
             const data = await res.json();
             
-            // 🎯 অটো-আনলকার লক রিলিজ: বাজি সফল বা বিফল যাই হোক, লক সাথে সাথে ফ্রেশ আনলক হবে
             window.isProcessingBet = false; 
             
             if (data.success) {
                 isBetting = false;
                 if (targetBtn) {
                     targetBtn.innerText = "BET";
-                    targetBtn.classList.remove('cashout');
                     targetBtn.style.setProperty('background-color', '#28a745', 'important');
                     targetBtn.style.setProperty('background', '#28a745', 'important');
                 }
                 
+                // 🎯 লাইভ ওয়ালেট সিঙ্ক ফিক্সড: এটি ক্যাশআউট হওয়ার ১ মিলি-সেকেন্ডে মেইন সাইটের ব্যালেন্স বার সাথে সাথে প্লাস করে দেবে
                 if (window.parent) { 
                     window.parent.postMessage({ action: "refresh_wallet" }, "*"); 
                 }
-            } else {
-                console.log(data.message || "Cashout Failed!");
             }
         } catch (e) { 
             window.isProcessingBet = false; 
             console.error(e); 
         }
     }
+     
 }
 function setAmt(val) { 
     const amtLabel = document.getElementById('amt-1') || document.querySelector('.amount-text');
