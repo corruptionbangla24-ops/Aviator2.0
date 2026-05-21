@@ -252,7 +252,7 @@
                 </div>
             </div>
 
-                <button class="main-btn" id="btn-1" onclick="handleAction()">BET</button>
+                <button class="main-btn" id="btn-1" onclick="handleAction('manual')">BET</button>
             </div>
             
             <div id="auto-settings-panel" class="auto-settings" style="display: none;">
@@ -413,10 +413,15 @@ async function handleAction() {
             window.isProcessingBet = false;
             console.error("Server Error!"); 
         }
-       } else {
-        if (window.isAutoCashoutEnabled) { return; }
+           } else {
+        // 🎯 ডাইনামিক ইভেন্ট পাসার: যদি প্লেয়ার হাত দিয়ে স্ক্রিনে চাপ দেয় (অটো-ক্যাশআউট ছাড়াই), কেবল তখনই ম্যানুয়াল ক্লিক কার্যকর হবে। অটো লুপের সিগন্যালকে এটি বিন্দুমাত্র ব্লক করবে না।
+        if (window.isAutoCashoutEnabled && typeof arguments[0] !== 'undefined' && arguments[0] === 'manual') {
+            return; 
+        }
+
         try {
             const targetBtn = btn || document.getElementById('btn-1') || document.getElementById('btn-2') || document.querySelector('.bet-btn') || document.querySelector('.cashout-btn');
+
             const freshParams = new URLSearchParams(window.location.search);
             const freshUserId = freshParams.get('userId') || freshParams.get('username') || urlUserId;
             const freshWallet = freshParams.get('wallet') || urlWallet;
